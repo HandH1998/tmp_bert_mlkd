@@ -1011,7 +1011,7 @@ def main():
                         loss_mse = MSELoss()
                         # cls_loss = loss_mse(student_logits.view(-1), label_ids.view(-1))# ？这里有问题
                         cls_loss = loss_mse(
-                            student_logits.view(-1), student_logits.view(-1))
+                            student_logits.view(-1), teacher_logits.view(-1))
 
                     loss = cls_loss
                     tr_cls_loss += cls_loss.item()
