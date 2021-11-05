@@ -417,7 +417,7 @@ class BertSelfAttention(nn.Module):
         new_context_layer_shape = context_layer.size()[
             :-2] + (self.all_head_size,)
         context_layer = context_layer.view(*new_context_layer_shape)
-        return context_layer, attention_scores
+        return context_layer, attention_scores, attention_probs
 
 
 class BertAttention(nn.Module):
@@ -428,9 +428,9 @@ class BertAttention(nn.Module):
         self.output = BertSelfOutput(config)
 
     def forward(self, input_tensor, attention_mask):
-        self_output, layer_att = self.self(input_tensor, attention_mask)
+        self_output, layer_att, layer_att_probs = self.self(input_tensor, attention_mask)
         attention_output = self.output(self_output, input_tensor)
-        return attention_output, layer_att
+        return attention_output, layer_att, layer_att_probs
 
 
 class BertSelfOutput(nn.Module):
@@ -492,12 +492,12 @@ class BertLayer(nn.Module):
         self.output = BertOutput(config)
 
     def forward(self, hidden_states, attention_mask):
-        attention_output, layer_att = self.attention(
+        attention_output, layer_att, layer_att_probs = self.attention(
             hidden_states, attention_mask)
         intermediate_output = self.intermediate(attention_output)
         layer_output = self.output(intermediate_output, attention_output)
 
-        return layer_output, layer_att
+        return layer_output, layer_att, layer_att_probs
 
 
 class BertEncoder(nn.Module):
@@ -509,14 +509,16 @@ class BertEncoder(nn.Module):
     def forward(self, hidden_states, attention_mask):
         all_encoder_layers = []
         all_encoder_atts = []
+        all_encoder_att_probs=[]
         for _, layer_module in enumerate(self.layer):
             all_encoder_layers.append(hidden_states)
-            hidden_states, layer_att = layer_module(
+            hidden_states, layer_att, layer_att_probs = layer_module(
                 hidden_states, attention_mask)
             all_encoder_atts.append(layer_att)
+            all_encoder_att_probs.append(layer_att_probs)
 
         all_encoder_layers.append(hidden_states)
-        return all_encoder_layers, all_encoder_atts
+        return all_encoder_layers, all_encoder_atts,all_encoder_att_probs
 
 
 class BertPooler(nn.Module):
@@ -852,7 +854,7 @@ class BertModel(BertPreTrainedModel):
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
 
         embedding_output = self.embeddings(input_ids, token_type_ids)
-        encoded_layers, layer_atts = self.encoder(embedding_output,
+        encoded_layers, layer_atts, layer_att_probs = self.encoder(embedding_output,
                                                   extended_attention_mask)
 
         pooled_output = self.pooler(encoded_layers)
@@ -862,7 +864,7 @@ class BertModel(BertPreTrainedModel):
         if not output_att:
             return encoded_layers, pooled_output
 
-        return encoded_layers, layer_atts, pooled_output
+        return encoded_layers, layer_atts, pooled_output, layer_att_probs
 
 
 class BertForPreTraining(BertPreTrainedModel):
@@ -1153,7 +1155,7 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
     def forward(self, input_ids, token_type_ids=None, attention_mask=None,
                 labels=None, is_student=False):
 
-        sequence_output, att_output, pooled_output = self.bert(input_ids, token_type_ids, attention_mask,
+        sequence_output, att_output, pooled_output, att_probs = self.bert(input_ids, token_type_ids, attention_mask,
                                                                output_all_encoded_layers=True, output_att=True)
 
         logits = self.classifier(torch.relu(pooled_output))
@@ -1165,4 +1167,4 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
             # for s_id, sequence_layer in enumerate(sequence_output):
             #     tmp.append(self.fit_dense(sequence_layer))
             sequence_output = tmp
-        return logits, att_output, sequence_output
+        return logits, att_output, sequence_output, att_probs

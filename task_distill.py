@@ -627,7 +627,7 @@ def do_eval(model, task_name, eval_dataloader,
         with torch.no_grad():
             input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch_
 
-            logits, _, _ = model(input_ids, segment_ids, input_mask)
+            logits, _, _,_ = model(input_ids, segment_ids, input_mask)
 
         # create eval loss and other metric required by the task
         if output_mode == "classification":
@@ -681,7 +681,7 @@ def main():
                         required=False,
                         help="The name of the task to train.")
     parser.add_argument("--output_dir",
-                        default="model\distilled_fine-tuned_model\mrpc\on_original_data",
+                        default="model\knowledge_review\distilled_intermediate_model\mrpc\on_original_data",
                         type=str,
                         required=False,
                         help="The output directory where the model predictions and checkpoints will be written.")
@@ -787,7 +787,7 @@ def main():
 
     # intermediate distillation default parameters
     default_params = {
-        "cola": {"num_train_epochs": 50, "max_seq_length": 64, "eval_step": 50},
+        "cola": {"num_train_epochs": 10, "max_seq_length": 64, "eval_step": 500},
         "mnli": {"num_train_epochs": 5, "max_seq_length": 128, "eval_step": 500},
         "mrpc": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10},
         "wnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10},
@@ -802,7 +802,7 @@ def main():
                    "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16},
     }
 
-    acc_tasks = ["mnli", "mrpc", "sst-2", "qqp", "qnli", "rte"]
+    acc_tasks = ["mnli", "mrpc", "sst-2", "qqp", "qnli", "rte", "wnli"]
     corr_tasks = ["sts-b"]
     mcc_tasks = ["cola"]
 
@@ -942,6 +942,28 @@ def main():
                 predicts, dim=-1)
             targets_prob = torch.nn.functional.softmax(targets, dim=-1)
             return (- targets_prob * student_likelihood).mean()
+        def embedding_loss(student_embedding,teacher_embedding):
+            return loss_mse(student_embedding,teacher_embedding)
+        def cal_fusion_reps(att_probs_list,hidden_states_list):
+            fusion_reps_list=[]
+            for att_probs,hidden_states in zip(att_probs_list,hidden_states_list):
+                fusion_reps_list.append(torch.matmul(att_probs,hidden_states.unsqueeze(1)))
+            return fusion_reps_list
+        def rep_knowledge_review(student_reps_list,teacher_reps_list):
+            total_rep_loss=0.
+            for i in range(len(teacher_reps_list)):
+                for j in range(i,len(student_reps_list)):
+                    total_rep_loss +=loss_mse(student_reps_list[j],teacher_reps_list[i])
+            return total_rep_loss
+        def att_knowledge_review(student_att_list,teacher_att_list):
+            student_att_list = [torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),student_att) for student_att in student_att_list]  # 将被mask掉的位置置为0
+            teacher_att_list = [torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),teacher_att) for teacher_att in teacher_att_list]
+            total_att_loss=0.
+            for i in range(len(teacher_att_list)):
+                for j in range(i,len(student_att_list)):
+                    total_att_loss +=loss_mse(student_att_list[j],teacher_att_list[i])
+            return total_att_loss
+
 
         # Train and evaluate
         global_step = 0
@@ -953,6 +975,8 @@ def main():
             tr_att_loss = 0.
             tr_rep_loss = 0.
             tr_cls_loss = 0.
+            tr_emb_loss = 0.
+            tr_fusion_rep_loss = 0.
 
             student_model.train()
             nb_tr_examples, nb_tr_steps = 0, 0
@@ -967,12 +991,14 @@ def main():
                 att_loss = 0.
                 rep_loss = 0.
                 cls_loss = 0.
+                emb_loss=0.
+                fusion_rep_loss=0.
 
-                student_logits, student_atts, student_reps = student_model(input_ids, segment_ids, input_mask,
+                student_logits, student_atts, student_reps, student_att_probs = student_model(input_ids, segment_ids, input_mask,
                                                                            is_student=True)
 
                 with torch.no_grad():
-                    teacher_logits, teacher_atts, teacher_reps = teacher_model(
+                    teacher_logits, teacher_atts, teacher_reps, teacher_att_probs = teacher_model(
                         input_ids, segment_ids, input_mask)
 
                 if not args.pred_distill:
@@ -983,26 +1009,43 @@ def main():
                         teacher_layer_num / student_layer_num)
                     new_teacher_atts = [teacher_atts[i * layers_per_block + layers_per_block - 1]
                                         for i in range(student_layer_num)]
+                    
+                    # for student_att, teacher_att in zip(student_atts, new_teacher_atts):
+                        # student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
+                        #                           student_att)  # 将被mask掉的位置置为0
+                        # teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
+                        #                           teacher_att)
 
-                    for student_att, teacher_att in zip(student_atts, new_teacher_atts):
-                        student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
-                                                  student_att)  # 将被mask掉的位置置为0
-                        teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
-                                                  teacher_att)
-
-                        tmp_loss = loss_mse(student_att, teacher_att)
-                        att_loss += tmp_loss
-
+                    #     tmp_loss = loss_mse(student_att, teacher_att)
+                    #     att_loss += tmp_loss
+                    
                     new_teacher_reps = [teacher_reps[i * layers_per_block]
                                         for i in range(student_layer_num + 1)]
                     new_student_reps = student_reps  # ？student的fit_dense为什么只有1个
-                    for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
-                        tmp_loss = loss_mse(student_rep, teacher_rep)
-                        rep_loss += tmp_loss
+                    # simple_fusion
+                    new_teacher_att_probs = [teacher_att_probs[i * layers_per_block + layers_per_block - 1]
+                                        for i in range(student_layer_num)]
+                    tmp_loss=embedding_loss(new_student_reps[0],new_teacher_reps[0])
+                    emb_loss +=tmp_loss
+                    new_student_att_probs=student_att_probs
+                    student_fusion_reps_list,teacher_fusion_reps_list=cal_fusion_reps(new_student_att_probs,new_student_reps[1:]),cal_fusion_reps(new_teacher_att_probs,new_teacher_reps[1:])
+                    for student_fusion_reps,teacher_fusion_reps in zip(student_fusion_reps_list,teacher_fusion_reps_list):
+                        tmp_loss=loss_mse(student_fusion_reps,teacher_fusion_reps)
+                        fusion_rep_loss +=tmp_loss
+                    loss= emb_loss+fusion_rep_loss
+                    tr_emb_loss +=emb_loss.item()
+                    tr_fusion_rep_loss +=fusion_rep_loss.item()
 
-                    loss = rep_loss + att_loss
-                    tr_att_loss += att_loss.item()
-                    tr_rep_loss += rep_loss.item()
+                    # for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
+                    #     tmp_loss = loss_mse(student_rep, teacher_rep)
+                    #     rep_loss += tmp_loss
+
+                    # vanilla knowledge review
+                    # att_loss=att_knowledge_review(student_atts,new_teacher_atts)
+                    # rep_loss =rep_knowledge_review(new_student_reps,new_teacher_reps)
+                    # loss = rep_loss + att_loss
+                    # tr_att_loss += att_loss.item()
+                    # tr_rep_loss += rep_loss.item()
                 else:
                     if output_mode == "classification":  # ！ 这里只是使用了soft label，没用ground truth
                         cls_loss = soft_cross_entropy(student_logits / args.temperature,
@@ -1011,7 +1054,7 @@ def main():
                         loss_mse = MSELoss()
                         # cls_loss = loss_mse(student_logits.view(-1), label_ids.view(-1))# ？这里有问题
                         cls_loss = loss_mse(
-                            student_logits.view(-1), student_logits.view(-1))
+                            student_logits.view(-1), teacher_logits.view(-1))
 
                     loss = cls_loss
                     tr_cls_loss += cls_loss.item()
@@ -1043,8 +1086,12 @@ def main():
 
                     loss = tr_loss / (step + 1)
                     cls_loss = tr_cls_loss / (step + 1)
-                    att_loss = tr_att_loss / (step + 1)
-                    rep_loss = tr_rep_loss / (step + 1)
+                    # vanilla knowledge review
+                    # att_loss = tr_att_loss / (step + 1)
+                    # rep_loss = tr_rep_loss / (step + 1)
+                    # simple fusion
+                    emb_loss = tr_emb_loss /(step+1)
+                    fusion_rep_loss = tr_fusion_rep_loss/(step+1)
 
                     result = {}
                     if args.pred_distill:
@@ -1052,8 +1099,12 @@ def main():
                                          device, output_mode, eval_labels, num_labels)
                     result['global_step'] = global_step
                     result['cls_loss'] = cls_loss
-                    result['att_loss'] = att_loss
-                    result['rep_loss'] = rep_loss
+                    # vanilla knowledge review
+                    # result['att_loss'] = att_loss
+                    # result['rep_loss'] = rep_loss
+                    # simple fusion
+                    result['emb_loss'] = emb_loss
+                    result['fusion_rep_loss'] = fusion_rep_loss
                     result['loss'] = loss
 
                     result_to_file(result, output_eval_file)
@@ -1065,14 +1116,17 @@ def main():
 
                         if task_name in acc_tasks and result['acc'] > best_dev_acc:
                             best_dev_acc = result['acc']
+                            best_dev_acc_str = str(best_dev_acc)
                             save_model = True
 
                         if task_name in corr_tasks and result['corr'] > best_dev_acc:
                             best_dev_acc = result['corr']
+                            best_dev_acc_str = str(best_dev_acc)
                             save_model = True
 
                         if task_name in mcc_tasks and result['mcc'] > best_dev_acc:
                             best_dev_acc = result['mcc']
+                            best_dev_acc_str = str(best_dev_acc)
                             save_model = True
 
                     if save_model:
@@ -1094,51 +1148,65 @@ def main():
                         model_to_save.config.to_json_file(output_config_file)
                         tokenizer.save_vocabulary(args.output_dir)
 
-                        # Test mnli-mm
-                        if args.pred_distill and task_name == "mnli":
-                            task_name = "mnli-mm"
-                            processor = processors[task_name]()
-                            if not os.path.exists(args.output_dir + '-MM'):
-                                os.makedirs(args.output_dir + '-MM')
+                    student_model.train()
 
-                            eval_examples = processor.get_dev_examples(
-                                args.data_dir)
+        if args.pred_distill:
+        # Test mnli-mm
+            if task_name == "mnli":
+                task_name = "mnli-mm"
+                processor = processors[task_name]()
+                if not os.path.exists(args.output_dir + '-MM'):
+                    os.makedirs(args.output_dir + '-MM')
 
-                            eval_features = convert_examples_to_features(
-                                eval_examples, label_list, args.max_seq_length, tokenizer, output_mode)
-                            eval_data, eval_labels = get_tensor_data(
-                                output_mode, eval_features)
+                eval_examples = processor.get_dev_examples(
+                    args.data_dir)
 
-                            logger.info("***** Running mm evaluation *****")
-                            logger.info("  Num examples = %d",
-                                        len(eval_examples))
-                            logger.info("  Batch size = %d",
-                                        args.eval_batch_size)
+                eval_features = convert_examples_to_features(
+                    eval_examples, label_list, args.max_seq_length, tokenizer, output_mode)
+                eval_data, eval_labels = get_tensor_data(
+                    output_mode, eval_features)
 
-                            eval_sampler = SequentialSampler(eval_data)
-                            eval_dataloader = DataLoader(eval_data, sampler=eval_sampler,
-                                                         batch_size=args.eval_batch_size)
+                logger.info("***** Running mm evaluation *****")
+                logger.info("  Num examples = %d",
+                            len(eval_examples))
+                logger.info("  Batch size = %d",
+                            args.eval_batch_size)
 
-                            result = do_eval(student_model, task_name, eval_dataloader,
-                                             device, output_mode, eval_labels, num_labels)
+                eval_sampler = SequentialSampler(eval_data)
+                eval_dataloader = DataLoader(eval_data, sampler=eval_sampler,
+                                                batch_size=args.eval_batch_size)
 
-                            result['global_step'] = global_step
+                result = do_eval(student_model, task_name, eval_dataloader,
+                                    device, output_mode, eval_labels, num_labels)
 
-                            tmp_output_eval_file = os.path.join(
-                                args.output_dir + '-MM', "eval_results.txt")
-                            result_to_file(result, tmp_output_eval_file)
+                result['global_step'] = global_step
 
-                            task_name = 'mnli'
+                tmp_output_eval_file = os.path.join(
+                    args.output_dir + '-MM', "final.results")
+                result_to_file(result, tmp_output_eval_file)
+                task_name = 'mnli'
+
+
+            # model_to_save =student_model.module if hasattr(student_model,'module') else student_model
+            # parameter_size = model_to_save.calc_sampled_param_num()
+
+            output_str ="**************S*************\n" + \
+                        "task_name = {}\n".format(task_name) + \
+                        "best_acc = %s\n" % best_dev_acc_str + \
+                        "**************E*************\n"
+
+            logger.info(output_str)
+            output_eval_file = os.path.join(
+                args.output_dir, "final.results")
+            with open(output_eval_file, "a+") as writer:
+                writer.write(output_str + '\n')
 
                         # if oncloud:
                         #     logging.info(mox.file.list_directory(args.output_dir, recursive=True))
                         #     logging.info(mox.file.list_directory('.', recursive=True))
                         #     mox.file.copy_parallel(args.output_dir, args.data_url)
                         #     mox.file.copy_parallel('.', args.data_url)
-
-                    student_model.train()
-
-
+                    
 if __name__ == "__main__":
     logger.info("Task start! ")
     start0 = datetime.now()
