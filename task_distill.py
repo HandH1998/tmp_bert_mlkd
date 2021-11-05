@@ -26,7 +26,8 @@ import logging
 import os
 import random
 import sys
-from datetime import datetime   
+from datetime import datetime  
+from torch.utils.tensorboard import SummaryWriter 
 
 import numpy as np
 import torch
@@ -685,6 +686,11 @@ def main():
                         type=str,
                         required=False,
                         help="The output directory where the model predictions and checkpoints will be written.")
+    parser.add_argument("--tensorboard_log_save_dir",
+                        default="tensorboard_log\\tmp",
+                        type=str,
+                        required=False,
+                        help="The output directory where the tensorboard logs will be written.")
     parser.add_argument("--cache_dir",
                         default="",
                         type=str,
@@ -787,14 +793,14 @@ def main():
 
     # intermediate distillation default parameters
     default_params = {
-        "cola": {"num_train_epochs": 10, "max_seq_length": 64, "eval_step": 500},
-        "mnli": {"num_train_epochs": 5, "max_seq_length": 128, "eval_step": 500},
+        "cola": {"num_train_epochs": 60, "max_seq_length": 64, "eval_step": 50},
+        "mnli": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500},
         "mrpc": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10},
         "wnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10},
-        "sst-2": {"num_train_epochs": 10, "max_seq_length": 64, "eval_step": 100},
+        "sst-2": {"num_train_epochs": 20, "max_seq_length": 64, "eval_step": 100},
         "sts-b": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10},
-        "qqp": {"num_train_epochs": 5, "max_seq_length": 128, "eval_step": 500},
-        "qnli": {"num_train_epochs": 10, "max_seq_length": 128, "eval_step": 500},
+        "qqp": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500},
+        "qnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 500},
         "rte": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10},
         "squad1": {"num_train_epochs": 4, "max_seq_length": 384,
                    "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16},
@@ -892,6 +898,20 @@ def main():
     student_model = TinyBertForSequenceClassification.from_pretrained(
         args.student_model, num_labels=num_labels, is_student=True)
     student_model.to(device)
+
+    tensorboard_log_save_dir = args.tensorboard_log_save_dir
+    if os.path.exists(tensorboard_log_save_dir):
+        logger.info("Tensorboard log directory ({}) already exists and is not empty.".format(
+            args.output_dir))
+        shutil.rmtree(tensorboard_log_save_dir)
+    if not os.path.exists(tensorboard_log_save_dir):
+        os.makedirs(tensorboard_log_save_dir)
+    writer = SummaryWriter(log_dir=tensorboard_log_save_dir, flush_secs=30)
+    inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size, args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
+    writer.add_graph(teacher_model,inputs,use_strict_trace=False)
+    writer.add_graph(student_model,inputs,use_strict_trace=False)
+
+
     if args.do_eval:
         logger.info("***** Running evaluation *****")
         logger.info("  Num examples = %d", len(eval_examples))
@@ -1069,7 +1089,7 @@ def main():
                 tr_loss += loss.item()
                 nb_tr_examples += label_ids.size(0)
                 nb_tr_steps += 1
-
+                writer.add_scalar('{} lr'.format(task_name),np.array(optimizer.get_lr()),global_step)
                 if (step + 1) % args.gradient_accumulation_steps == 0:
                     optimizer.step()
                     optimizer.zero_grad()
@@ -1097,6 +1117,7 @@ def main():
                     if args.pred_distill:
                         result = do_eval(student_model, task_name, eval_dataloader,
                                          device, output_mode, eval_labels, num_labels)
+                        writer.add_scalar('{} eval_loss'.format(task_name),result['eval_loss'],global_step)
                     result['global_step'] = global_step
                     result['cls_loss'] = cls_loss
                     # vanilla knowledge review
@@ -1106,7 +1127,15 @@ def main():
                     result['emb_loss'] = emb_loss
                     result['fusion_rep_loss'] = fusion_rep_loss
                     result['loss'] = loss
-
+                    writer.add_scalar('{} train_loss'.format(task_name),loss,global_step)
+                    if not args.pred_distill:
+                        # vanilla knowledge review
+                        # writer.add_scalar('{} att_loss'.format(task_name),att_loss,global_step)
+                        # writer.add_scalar('{} rep_loss'.format(task_name),rep_loss,global_step)
+                        # simple fusion
+                        writer.add_scalar('{} emb_loss'.format(task_name),emb_loss,global_step)
+                        writer.add_scalar('{} fusion_rep_loss'.format(task_name),fusion_rep_loss,global_step)
+                    
                     result_to_file(result, output_eval_file)
 
                     if not args.pred_distill:  # 中间层蒸馏每次都保存
@@ -1114,20 +1143,26 @@ def main():
                     else:
                         save_model = False  # 预测层蒸馏只保存最好结果
 
-                        if task_name in acc_tasks and result['acc'] > best_dev_acc:
-                            best_dev_acc = result['acc']
-                            best_dev_acc_str = str(best_dev_acc)
-                            save_model = True
+                        if task_name in acc_tasks:
+                            writer.add_scalar('{} acc'.format(task_name),result['acc'],global_step)
+                            if result['acc'] > best_dev_acc:
+                                best_dev_acc = result['acc']
+                                best_dev_acc_str = str(best_dev_acc)
+                                save_model = True
 
-                        if task_name in corr_tasks and result['corr'] > best_dev_acc:
-                            best_dev_acc = result['corr']
-                            best_dev_acc_str = str(best_dev_acc)
-                            save_model = True
+                        if task_name in corr_tasks:
+                            writer.add_scalar('{} corr'.format(task_name),result['corr'],global_step)
+                            if result['corr'] > best_dev_acc:
+                                best_dev_acc = result['corr']
+                                best_dev_acc_str = str(best_dev_acc)
+                                save_model = True
 
-                        if task_name in mcc_tasks and result['mcc'] > best_dev_acc:
-                            best_dev_acc = result['mcc']
-                            best_dev_acc_str = str(best_dev_acc)
-                            save_model = True
+                        if task_name in mcc_tasks:
+                            writer.add_scalar('{} mcc'.format(task_name),result['mcc'],global_step)
+                            if result['mcc'] > best_dev_acc:
+                                best_dev_acc = result['mcc']
+                                best_dev_acc_str = str(best_dev_acc)
+                                save_model = True
 
                     if save_model:
                         logger.info("***** Save model *****")
