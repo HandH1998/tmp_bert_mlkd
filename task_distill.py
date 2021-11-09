@@ -26,8 +26,8 @@ import logging
 import os
 import random
 import sys
-from datetime import datetime  
-from torch.utils.tensorboard import SummaryWriter 
+from datetime import datetime
+from torch.utils.tensorboard import SummaryWriter
 
 import numpy as np
 import torch
@@ -628,7 +628,7 @@ def do_eval(model, task_name, eval_dataloader,
         with torch.no_grad():
             input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch_
 
-            logits, _, _,_ = model(input_ids, segment_ids, input_mask)
+            logits, _, _, _ = model(input_ids, segment_ids, input_mask)
 
         # create eval loss and other metric required by the task
         if output_mode == "classification":
@@ -793,24 +793,25 @@ def main():
 
     # intermediate distillation default parameters
     default_params = {
-        "cola": {"num_train_epochs": 60, "max_seq_length": 64, "eval_step": 50},
-        "mnli": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500},
-        "mrpc": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10},
-        "wnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10},
-        "sst-2": {"num_train_epochs": 20, "max_seq_length": 64, "eval_step": 100},
-        "sts-b": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10},
-        "qqp": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500},
-        "qnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 500},
-        "rte": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10},
-        "squad1": {"num_train_epochs": 4, "max_seq_length": 384,
-                   "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16},
-        "squad2": {"num_train_epochs": 4, "max_seq_length": 384,
-                   "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16},
+        "cola": {"num_train_epochs": 60, "max_seq_length": 64, "eval_step": 50,"num_train_epochs_distill_prediction":40},
+        "mnli": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500,"num_train_epochs_distill_prediction":6},
+        "mrpc": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20,"num_train_epochs_distill_prediction":20},
+        "wnli": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20,"num_train_epochs_distill_prediction":15},
+        "sst-2": {"num_train_epochs": 30, "max_seq_length": 64, "eval_step": 100,"num_train_epochs_distill_prediction":20},
+        "sts-b": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20,"num_train_epochs_distill_prediction":15},
+        "qqp": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500,"num_train_epochs_distill_prediction":6},
+        "qnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 500,"num_train_epochs_distill_prediction":10},
+        "rte": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 10,"num_train_epochs_distill_prediction":15},
+        "squad1": {"num_train_epochs": 6, "max_seq_length": 384,
+                   "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16,"num_train_epochs_distill_prediction":3},
+        "squad2": {"num_train_epochs": 6, "max_seq_length": 384,
+                   "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16,"num_train_epochs_distill_prediction":3},
     }
 
     acc_tasks = ["mnli", "mrpc", "sst-2", "qqp", "qnli", "rte", "wnli"]
     corr_tasks = ["sts-b"]
     mcc_tasks = ["cola"]
+    # f1_tasks=["mrpc"]
 
     # Prepare devices
     device = torch.device("cuda" if torch.cuda.is_available()
@@ -848,6 +849,9 @@ def main():
     if not args.pred_distill and not args.do_eval:
         if task_name in default_params:
             args.num_train_epochs = default_params[task_name]["num_train_epochs"]
+    if args.pred_distill:
+        if task_name in default_params:
+            args.num_train_epochs = default_params[task_name]["num_train_epochs_distill_prediction"]
     logger.info('The args: {}'.format(args))
 
     if task_name not in processors:
@@ -907,10 +911,10 @@ def main():
     if not os.path.exists(tensorboard_log_save_dir):
         os.makedirs(tensorboard_log_save_dir)
     writer = SummaryWriter(log_dir=tensorboard_log_save_dir, flush_secs=30)
-    inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size, args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
-    writer.add_graph(teacher_model,inputs,use_strict_trace=False)
-    writer.add_graph(student_model,inputs,use_strict_trace=False)
-
+    inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size,
+                   args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
+    # writer.add_graph(teacher_model, inputs, use_strict_trace=False)
+    writer.add_graph(student_model, inputs, use_strict_trace=False)
 
     if args.do_eval:
         logger.info("***** Running evaluation *****")
@@ -962,28 +966,47 @@ def main():
                 predicts, dim=-1)
             targets_prob = torch.nn.functional.softmax(targets, dim=-1)
             return (- targets_prob * student_likelihood).mean()
-        def embedding_loss(student_embedding,teacher_embedding):
-            return loss_mse(student_embedding,teacher_embedding)
-        def cal_fusion_reps(att_probs_list,hidden_states_list):
-            fusion_reps_list=[]
-            for att_probs,hidden_states in zip(att_probs_list,hidden_states_list):
-                fusion_reps_list.append(torch.matmul(att_probs,hidden_states.unsqueeze(1)))
-            return fusion_reps_list
-        def rep_knowledge_review(student_reps_list,teacher_reps_list):
-            total_rep_loss=0.
-            for i in range(len(teacher_reps_list)):
-                for j in range(i,len(student_reps_list)):
-                    total_rep_loss +=loss_mse(student_reps_list[j],teacher_reps_list[i])
-            return total_rep_loss
-        def att_knowledge_review(student_att_list,teacher_att_list):
-            student_att_list = [torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),student_att) for student_att in student_att_list]  # 将被mask掉的位置置为0
-            teacher_att_list = [torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),teacher_att) for teacher_att in teacher_att_list]
-            total_att_loss=0.
-            for i in range(len(teacher_att_list)):
-                for j in range(i,len(student_att_list)):
-                    total_att_loss +=loss_mse(student_att_list[j],teacher_att_list[i])
-            return total_att_loss
 
+        def embedding_loss(student_embedding, teacher_embedding):
+            return loss_mse(student_embedding, teacher_embedding)
+
+        def cal_fusion_reps(att_probs_list, hidden_states_list):
+            fusion_reps_list = []
+            for att_probs, hidden_states in zip(att_probs_list, hidden_states_list):
+                fusion_reps_list.append(torch.matmul(
+                    att_probs, hidden_states.unsqueeze(1)))
+            return fusion_reps_list
+
+        def resual_kr_simple_fusion(student_fusion_reps_list, teacher_fusion_reps_list):
+            alpha = 0.6
+            total_resual_kr_simple_fusion_loss = 0.
+            student_fusion_rep = student_fusion_reps_list[-1]
+            for i in range(len(teacher_fusion_reps_list)-1, -1, -1):
+                student_fusion_rep = alpha * \
+                    student_fusion_reps_list[i]+(1-alpha)*student_fusion_rep
+                total_resual_kr_simple_fusion_loss += loss_mse(
+                    student_fusion_rep, teacher_fusion_reps_list[i])
+            return total_resual_kr_simple_fusion_loss
+
+        def rep_knowledge_review(student_reps_list, teacher_reps_list):
+            total_rep_loss = 0.
+            for i in range(len(teacher_reps_list)):
+                for j in range(i, len(student_reps_list)):
+                    total_rep_loss += loss_mse(
+                        student_reps_list[j], teacher_reps_list[i])
+            return total_rep_loss
+
+        def att_knowledge_review(student_att_list, teacher_att_list):
+            student_att_list = [torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(
+                device), student_att) for student_att in student_att_list]  # 将被mask掉的位置置为0
+            teacher_att_list = [torch.where(teacher_att <= -1e2, torch.zeros_like(
+                teacher_att).to(device), teacher_att) for teacher_att in teacher_att_list]
+            total_att_loss = 0.
+            for i in range(len(teacher_att_list)):
+                for j in range(i, len(student_att_list)):
+                    total_att_loss += loss_mse(
+                        student_att_list[j], teacher_att_list[i])
+            return total_att_loss
 
         # Train and evaluate
         global_step = 0
@@ -997,6 +1020,7 @@ def main():
             tr_cls_loss = 0.
             tr_emb_loss = 0.
             tr_fusion_rep_loss = 0.
+            tr_resual_kr_simple_fusion_loss = 0.
 
             student_model.train()
             nb_tr_examples, nb_tr_steps = 0, 0
@@ -1011,11 +1035,12 @@ def main():
                 att_loss = 0.
                 rep_loss = 0.
                 cls_loss = 0.
-                emb_loss=0.
-                fusion_rep_loss=0.
+                emb_loss = 0.
+                fusion_rep_loss = 0.
+                resual_kr_simple_fusion_loss = 0.
 
                 student_logits, student_atts, student_reps, student_att_probs = student_model(input_ids, segment_ids, input_mask,
-                                                                           is_student=True)
+                                                                                              is_student=True)
 
                 with torch.no_grad():
                     teacher_logits, teacher_atts, teacher_reps, teacher_att_probs = teacher_model(
@@ -1029,32 +1054,39 @@ def main():
                         teacher_layer_num / student_layer_num)
                     new_teacher_atts = [teacher_atts[i * layers_per_block + layers_per_block - 1]
                                         for i in range(student_layer_num)]
-                    
+
                     # for student_att, teacher_att in zip(student_atts, new_teacher_atts):
-                        # student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
-                        #                           student_att)  # 将被mask掉的位置置为0
-                        # teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
-                        #                           teacher_att)
+                    # student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
+                    #                           student_att)  # 将被mask掉的位置置为0
+                    # teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
+                    #                           teacher_att)
 
                     #     tmp_loss = loss_mse(student_att, teacher_att)
                     #     att_loss += tmp_loss
-                    
+
                     new_teacher_reps = [teacher_reps[i * layers_per_block]
                                         for i in range(student_layer_num + 1)]
                     new_student_reps = student_reps  # ？student的fit_dense为什么只有1个
                     # simple_fusion
                     new_teacher_att_probs = [teacher_att_probs[i * layers_per_block + layers_per_block - 1]
-                                        for i in range(student_layer_num)]
-                    tmp_loss=embedding_loss(new_student_reps[0],new_teacher_reps[0])
-                    emb_loss +=tmp_loss
-                    new_student_att_probs=student_att_probs
-                    student_fusion_reps_list,teacher_fusion_reps_list=cal_fusion_reps(new_student_att_probs,new_student_reps[1:]),cal_fusion_reps(new_teacher_att_probs,new_teacher_reps[1:])
-                    for student_fusion_reps,teacher_fusion_reps in zip(student_fusion_reps_list,teacher_fusion_reps_list):
-                        tmp_loss=loss_mse(student_fusion_reps,teacher_fusion_reps)
-                        fusion_rep_loss +=tmp_loss
-                    loss= emb_loss+fusion_rep_loss
-                    tr_emb_loss +=emb_loss.item()
-                    tr_fusion_rep_loss +=fusion_rep_loss.item()
+                                             for i in range(student_layer_num)]
+                    tmp_loss = embedding_loss(
+                        new_student_reps[0], new_teacher_reps[0])
+                    emb_loss += tmp_loss
+                    new_student_att_probs = student_att_probs
+                    student_fusion_reps_list, teacher_fusion_reps_list = cal_fusion_reps(
+                        new_student_att_probs, new_student_reps[1:]), cal_fusion_reps(new_teacher_att_probs, new_teacher_reps[1:])
+                    # for student_fusion_reps,teacher_fusion_reps in zip(student_fusion_reps_list,teacher_fusion_reps_list):
+                    #     tmp_loss=loss_mse(student_fusion_reps,teacher_fusion_reps)
+                    #     fusion_rep_loss +=tmp_loss
+                    # loss= emb_loss+fusion_rep_loss
+                    tmp_loss = resual_kr_simple_fusion(
+                        student_fusion_reps_list, teacher_fusion_reps_list)
+                    resual_kr_simple_fusion_loss += tmp_loss
+                    loss = emb_loss+resual_kr_simple_fusion_loss
+                    tr_emb_loss += emb_loss.item()
+                    tr_resual_kr_simple_fusion_loss += resual_kr_simple_fusion_loss.item()
+                    # tr_fusion_rep_loss +=fusion_rep_loss.item()
 
                     # for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
                     #     tmp_loss = loss_mse(student_rep, teacher_rep)
@@ -1089,7 +1121,10 @@ def main():
                 tr_loss += loss.item()
                 nb_tr_examples += label_ids.size(0)
                 nb_tr_steps += 1
-                writer.add_scalar('{} lr'.format(task_name),np.array(optimizer.get_lr()),global_step)
+                # print("##############################################")
+                # print(optimizer.schedule.get_lr())
+                # writer.add_scalar('{} lr'.format(task_name),
+                #                   np.array(optimizer.get_lr()), global_step)
                 if (step + 1) % args.gradient_accumulation_steps == 0:
                     optimizer.step()
                     optimizer.zero_grad()
@@ -1110,32 +1145,45 @@ def main():
                     # att_loss = tr_att_loss / (step + 1)
                     # rep_loss = tr_rep_loss / (step + 1)
                     # simple fusion
-                    emb_loss = tr_emb_loss /(step+1)
-                    fusion_rep_loss = tr_fusion_rep_loss/(step+1)
+                    # emb_loss = tr_emb_loss /(step+1)
+                    # fusion_rep_loss = tr_fusion_rep_loss/(step+1)
+                    # resual kr with simple fusion
+                    emb_loss = tr_emb_loss / (step+1)
+                    resual_kr_simple_fusion_loss = tr_resual_kr_simple_fusion_loss / \
+                        (step+1)
 
                     result = {}
                     if args.pred_distill:
                         result = do_eval(student_model, task_name, eval_dataloader,
                                          device, output_mode, eval_labels, num_labels)
-                        writer.add_scalar('{} eval_loss'.format(task_name),result['eval_loss'],global_step)
+                        writer.add_scalar('{} eval_loss'.format(
+                            task_name), result['eval_loss'], global_step)
                     result['global_step'] = global_step
                     result['cls_loss'] = cls_loss
                     # vanilla knowledge review
                     # result['att_loss'] = att_loss
                     # result['rep_loss'] = rep_loss
                     # simple fusion
+                    # result['emb_loss'] = emb_loss
+                    # result['fusion_rep_loss'] = fusion_rep_loss
+                    # resual kr with simple fusion
                     result['emb_loss'] = emb_loss
-                    result['fusion_rep_loss'] = fusion_rep_loss
+                    result['resual_kr_simple_fusion_loss'] = resual_kr_simple_fusion_loss
                     result['loss'] = loss
-                    writer.add_scalar('{} train_loss'.format(task_name),loss,global_step)
+                    writer.add_scalar('{} train_loss'.format(
+                        task_name), loss, global_step)
                     if not args.pred_distill:
                         # vanilla knowledge review
                         # writer.add_scalar('{} att_loss'.format(task_name),att_loss,global_step)
                         # writer.add_scalar('{} rep_loss'.format(task_name),rep_loss,global_step)
                         # simple fusion
-                        writer.add_scalar('{} emb_loss'.format(task_name),emb_loss,global_step)
-                        writer.add_scalar('{} fusion_rep_loss'.format(task_name),fusion_rep_loss,global_step)
-                    
+                        # writer.add_scalar('{} emb_loss'.format(task_name),emb_loss,global_step)
+                        # writer.add_scalar('{} fusion_rep_loss'.format(task_name),fusion_rep_loss,global_step)
+                        # resual kr with simple fusion
+                        writer.add_scalar('{} emb_loss'.format(
+                            task_name), emb_loss, global_step)
+                        writer.add_scalar('{} resual_kr_simple_fusion_loss'.format(
+                            task_name), resual_kr_simple_fusion_loss, global_step)
                     result_to_file(result, output_eval_file)
 
                     if not args.pred_distill:  # 中间层蒸馏每次都保存
@@ -1144,21 +1192,24 @@ def main():
                         save_model = False  # 预测层蒸馏只保存最好结果
 
                         if task_name in acc_tasks:
-                            writer.add_scalar('{} acc'.format(task_name),result['acc'],global_step)
+                            writer.add_scalar('{} acc'.format(
+                                task_name), result['acc'], global_step)
                             if result['acc'] > best_dev_acc:
                                 best_dev_acc = result['acc']
                                 best_dev_acc_str = str(best_dev_acc)
                                 save_model = True
 
                         if task_name in corr_tasks:
-                            writer.add_scalar('{} corr'.format(task_name),result['corr'],global_step)
+                            writer.add_scalar('{} corr'.format(
+                                task_name), result['corr'], global_step)
                             if result['corr'] > best_dev_acc:
                                 best_dev_acc = result['corr']
                                 best_dev_acc_str = str(best_dev_acc)
                                 save_model = True
 
                         if task_name in mcc_tasks:
-                            writer.add_scalar('{} mcc'.format(task_name),result['mcc'],global_step)
+                            writer.add_scalar('{} mcc'.format(
+                                task_name), result['mcc'], global_step)
                             if result['mcc'] > best_dev_acc:
                                 best_dev_acc = result['mcc']
                                 best_dev_acc_str = str(best_dev_acc)
@@ -1186,7 +1237,7 @@ def main():
                     student_model.train()
 
         if args.pred_distill:
-        # Test mnli-mm
+            # Test mnli-mm
             if task_name == "mnli":
                 task_name = "mnli-mm"
                 processor = processors[task_name]()
@@ -1209,10 +1260,10 @@ def main():
 
                 eval_sampler = SequentialSampler(eval_data)
                 eval_dataloader = DataLoader(eval_data, sampler=eval_sampler,
-                                                batch_size=args.eval_batch_size)
+                                             batch_size=args.eval_batch_size)
 
                 result = do_eval(student_model, task_name, eval_dataloader,
-                                    device, output_mode, eval_labels, num_labels)
+                                 device, output_mode, eval_labels, num_labels)
 
                 result['global_step'] = global_step
 
@@ -1221,14 +1272,13 @@ def main():
                 result_to_file(result, tmp_output_eval_file)
                 task_name = 'mnli'
 
-
             # model_to_save =student_model.module if hasattr(student_model,'module') else student_model
             # parameter_size = model_to_save.calc_sampled_param_num()
 
-            output_str ="**************S*************\n" + \
-                        "task_name = {}\n".format(task_name) + \
-                        "best_acc = %s\n" % best_dev_acc_str + \
-                        "**************E*************\n"
+            output_str = "**************S*************\n" + \
+                "task_name = {}\n".format(task_name) + \
+                "best_acc = %s\n" % best_dev_acc_str + \
+                "**************E*************\n"
 
             logger.info(output_str)
             output_eval_file = os.path.join(
@@ -1236,12 +1286,13 @@ def main():
             with open(output_eval_file, "a+") as writer:
                 writer.write(output_str + '\n')
 
-                        # if oncloud:
-                        #     logging.info(mox.file.list_directory(args.output_dir, recursive=True))
-                        #     logging.info(mox.file.list_directory('.', recursive=True))
-                        #     mox.file.copy_parallel(args.output_dir, args.data_url)
-                        #     mox.file.copy_parallel('.', args.data_url)
-                    
+                # if oncloud:
+                #     logging.info(mox.file.list_directory(args.output_dir, recursive=True))
+                #     logging.info(mox.file.list_directory('.', recursive=True))
+                #     mox.file.copy_parallel(args.output_dir, args.data_url)
+                #     mox.file.copy_parallel('.', args.data_url)
+
+
 if __name__ == "__main__":
     logger.info("Task start! ")
     start0 = datetime.now()
