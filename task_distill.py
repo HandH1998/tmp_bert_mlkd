@@ -793,7 +793,7 @@ def main():
 
     # intermediate distillation default parameters
     default_params = {
-        "cola": {"num_train_epochs": 60, "max_seq_length": 64, "eval_step": 50,"num_train_epochs_distill_prediction":40},
+        "cola": {"num_train_epochs": 60, "max_seq_length": 64, "eval_step": 20,"num_train_epochs_distill_prediction":40},
         "mnli": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500,"num_train_epochs_distill_prediction":6},
         "mrpc": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20,"num_train_epochs_distill_prediction":20},
         "wnli": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20,"num_train_epochs_distill_prediction":15},
@@ -960,7 +960,6 @@ def main():
                              t_total=num_train_optimization_steps)
         # Prepare loss functions
         loss_mse = MSELoss()
-
         def soft_cross_entropy(predicts, targets):
             student_likelihood = torch.nn.functional.log_softmax(
                 predicts, dim=-1)
@@ -976,7 +975,11 @@ def main():
                 fusion_reps_list.append(torch.matmul(
                     att_probs, hidden_states.unsqueeze(1)))
             return fusion_reps_list
-
+        def resual_kr_enhanced_simple_fusion(student_fusion_reps_list, teacher_fusion_reps_list):
+            total_resual_kr_enhanced_simple_fusion=0.
+            for student_fusion_rep,teacher_fusion_rep in zip(student_fusion_reps_list,teacher_fusion_reps_list):
+                total_resual_kr_enhanced_simple_fusion +=loss_mse(student_fusion_rep,teacher_fusion_rep)
+            return total_resual_kr_enhanced_simple_fusion
         def resual_kr_simple_fusion(student_fusion_reps_list, teacher_fusion_reps_list):
             alpha = 0.6
             total_resual_kr_simple_fusion_loss = 0.
@@ -1021,6 +1024,7 @@ def main():
             tr_emb_loss = 0.
             tr_fusion_rep_loss = 0.
             tr_resual_kr_simple_fusion_loss = 0.
+            tr_resual_kr_enhanced_simple_fusion_loss=0.
 
             student_model.train()
             nb_tr_examples, nb_tr_steps = 0, 0
@@ -1038,8 +1042,9 @@ def main():
                 emb_loss = 0.
                 fusion_rep_loss = 0.
                 resual_kr_simple_fusion_loss = 0.
+                resual_kr_enhanced_simple_fusion_loss = 0.
 
-                student_logits, student_atts, student_reps, student_att_probs = student_model(input_ids, segment_ids, input_mask,
+                student_logits, student_atts, student_reps, student_att_probs,student_fusion_reps_list = student_model(input_ids, segment_ids, input_mask,
                                                                                               is_student=True)
 
                 with torch.no_grad():
@@ -1074,18 +1079,28 @@ def main():
                         new_student_reps[0], new_teacher_reps[0])
                     emb_loss += tmp_loss
                     new_student_att_probs = student_att_probs
-                    student_fusion_reps_list, teacher_fusion_reps_list = cal_fusion_reps(
-                        new_student_att_probs, new_student_reps[1:]), cal_fusion_reps(new_teacher_att_probs, new_teacher_reps[1:])
+                    teacher_fusion_reps_list = cal_fusion_reps(new_teacher_att_probs, new_teacher_reps[1:])
+                    # student_fusion_reps_list, teacher_fusion_reps_list = cal_fusion_reps(
+                    #     new_student_att_probs, new_student_reps[1:]), cal_fusion_reps(new_teacher_att_probs, new_teacher_reps[1:])
                     # for student_fusion_reps,teacher_fusion_reps in zip(student_fusion_reps_list,teacher_fusion_reps_list):
                     #     tmp_loss=loss_mse(student_fusion_reps,teacher_fusion_reps)
                     #     fusion_rep_loss +=tmp_loss
                     # loss= emb_loss+fusion_rep_loss
-                    tmp_loss = resual_kr_simple_fusion(
+                    # resual kr with enhanced simple fusion
+                    # tmp_loss = resual_kr_simple_fusion(
+                    #     student_fusion_reps_list, teacher_fusion_reps_list)
+                    # resual_kr_simple_fusion_loss += tmp_loss
+                    # resual kr with enhanced simple fusion
+                    tmp_loss = resual_kr_enhanced_simple_fusion(
                         student_fusion_reps_list, teacher_fusion_reps_list)
-                    resual_kr_simple_fusion_loss += tmp_loss
-                    loss = emb_loss+resual_kr_simple_fusion_loss
+                    resual_kr_enhanced_simple_fusion_loss += tmp_loss
+                    
+                    loss = emb_loss+resual_kr_enhanced_simple_fusion_loss
                     tr_emb_loss += emb_loss.item()
-                    tr_resual_kr_simple_fusion_loss += resual_kr_simple_fusion_loss.item()
+                    tr_resual_kr_enhanced_simple_fusion_loss += resual_kr_enhanced_simple_fusion_loss.item()
+                    # loss = emb_loss+resual_kr_simple_fusion_loss
+                    # tr_emb_loss += emb_loss.item()
+                    # tr_resual_kr_simple_fusion_loss += resual_kr_simple_fusion_loss.item()
                     # tr_fusion_rep_loss +=fusion_rep_loss.item()
 
                     # for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
@@ -1148,8 +1163,12 @@ def main():
                     # emb_loss = tr_emb_loss /(step+1)
                     # fusion_rep_loss = tr_fusion_rep_loss/(step+1)
                     # resual kr with simple fusion
+                    # emb_loss = tr_emb_loss / (step+1)
+                    # resual_kr_simple_fusion_loss = tr_resual_kr_simple_fusion_loss / \
+                    #     (step+1)
+                    # resual kr with enhanced simple fusion
                     emb_loss = tr_emb_loss / (step+1)
-                    resual_kr_simple_fusion_loss = tr_resual_kr_simple_fusion_loss / \
+                    resual_kr_enhanced_simple_fusion_loss = tr_resual_kr_enhanced_simple_fusion_loss / \
                         (step+1)
 
                     result = {}
@@ -1167,8 +1186,11 @@ def main():
                     # result['emb_loss'] = emb_loss
                     # result['fusion_rep_loss'] = fusion_rep_loss
                     # resual kr with simple fusion
+                    # result['emb_loss'] = emb_loss
+                    # result['resual_kr_simple_fusion_loss'] = resual_kr_simple_fusion_loss
+                    # resual kr with enhanced simple fusion
                     result['emb_loss'] = emb_loss
-                    result['resual_kr_simple_fusion_loss'] = resual_kr_simple_fusion_loss
+                    result['resual_kr_enhanced_simple_fusion_loss'] = resual_kr_enhanced_simple_fusion_loss
                     result['loss'] = loss
                     writer.add_scalar('{} train_loss'.format(
                         task_name), loss, global_step)
@@ -1180,10 +1202,15 @@ def main():
                         # writer.add_scalar('{} emb_loss'.format(task_name),emb_loss,global_step)
                         # writer.add_scalar('{} fusion_rep_loss'.format(task_name),fusion_rep_loss,global_step)
                         # resual kr with simple fusion
+                        # writer.add_scalar('{} emb_loss'.format(
+                        #     task_name), emb_loss, global_step)
+                        # writer.add_scalar('{} resual_kr_simple_fusion_loss'.format(
+                        #     task_name), resual_kr_simple_fusion_loss, global_step)
+                        # resual kr with enhanced simple fusion
                         writer.add_scalar('{} emb_loss'.format(
                             task_name), emb_loss, global_step)
-                        writer.add_scalar('{} resual_kr_simple_fusion_loss'.format(
-                            task_name), resual_kr_simple_fusion_loss, global_step)
+                        writer.add_scalar('{} resual_kr_enhanced_simple_fusion_loss'.format(
+                            task_name), resual_kr_enhanced_simple_fusion_loss, global_step)
                     result_to_file(result, output_eval_file)
 
                     if not args.pred_distill:  # 中间层蒸馏每次都保存

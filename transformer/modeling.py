@@ -1139,7 +1139,7 @@ class BertForSentencePairClassification(BertPreTrainedModel):
         else:
             return logits
 
-
+from reviewkd import ReviewKD
 class TinyBertForSequenceClassification(BertPreTrainedModel):
     def __init__(self, config, num_labels, fit_size=768, **kwargs):
         super(TinyBertForSequenceClassification, self).__init__(config)
@@ -1150,6 +1150,7 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
         # self.fit_dense = nn.Linear(config.hidden_size, fit_size)# !修改
         if kwargs['is_student']:
             self.fit_denses = nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers+1)])
+            self.reviewKD=ReviewKD(config.num_attention_heads,config.num_hidden_layers)
         self.apply(self.init_bert_weights)
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None,
@@ -1167,4 +1168,14 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
             # for s_id, sequence_layer in enumerate(sequence_output):
             #     tmp.append(self.fit_dense(sequence_layer))
             sequence_output = tmp
+            student_fusion_reps_list=self.cal_fusion_reps(att_probs,sequence_output[1:])
+            student_fusion_reps_list=self.reviewKD(student_fusion_reps_list)
+            return logits, att_output, sequence_output, att_probs,student_fusion_reps_list
         return logits, att_output, sequence_output, att_probs
+
+    def cal_fusion_reps(self,att_probs_list, hidden_states_list):
+            fusion_reps_list = []
+            for att_probs, hidden_states in zip(att_probs_list, hidden_states_list):
+                fusion_reps_list.append(torch.matmul(
+                    att_probs, hidden_states.unsqueeze(1)))
+            return fusion_reps_list
