@@ -40,7 +40,12 @@ class ABF(nn.Module):
         # nn.init.kaiming_uniform_(self.conv2[0].weight, a=1)  # pyre-ignore
 
     def forward(self, x, y=None, shape=None, out_shape=None):
-        n, _, h, w = x.shape
+        try:        
+            n, _, h, w = x.shape
+        except:
+            x=torch.unsqueeze(x,1)
+            y=torch.unsqueeze(y,1)
+            n, _, h, w = x.shape
         # transform student features
         # x = self.conv1(x)
         # if self.att_conv is not None:
@@ -51,6 +56,7 @@ class ABF(nn.Module):
         z = torch.cat([x, y], dim=1)
         z = self.att_conv(z)
         x = (x * z[:, 0].view(n, 1, h, w) + y * z[:, 1].view(n, 1, h, w))
+        x =torch.squeeze(x)
         # output
         # if x.shape[-1] != out_shape:
         #     # 这个x就是当前stage的融合特征，它的channel是mid_channel，shape和teacher的shape相同
@@ -160,18 +166,23 @@ class ReviewKD(nn.Module):
 #     )
 #     return backbone
 
-def hcl(fstudent, fteacher):
+def hcl(fstudent, fteacher,hidden_size=312):
     loss_all = 0.0
     for fs, ft in zip(fstudent, fteacher):
-        n, c, h, w = fs.shape
+        try:
+            n, c, h, w = fs.shape
+        except:
+            fs=torch.unsqueeze(fs,1)
+            ft=torch.unsqueeze(ft,1)
+            n, c, h, w = fs.shape
         loss = F.mse_loss(fs, ft, reduction='mean')
         cnt = 1.0
         tot = 1.0
         for l in [4, 2, 1]:
             if l >= h:
                 continue
-            tmpfs = F.adaptive_avg_pool2d(fs, (l, l))
-            tmpft = F.adaptive_avg_pool2d(ft, (l, l))
+            tmpfs = F.adaptive_avg_pool2d(fs, (l, hidden_size))
+            tmpft = F.adaptive_avg_pool2d(ft, (l, hidden_size))
             cnt /= 2.0
             loss += F.mse_loss(tmpfs, tmpft, reduction='mean') * cnt
             tot += cnt

@@ -991,7 +991,7 @@ def pearson_and_spearman(preds, labels):
     spearman_corr = spearmanr(preds, labels)[0]
     return {
         "pearson": pearson_corr,
-        "spearmanr": spearman_corr,
+        "spearman": spearman_corr,
         "corr": (pearson_corr + spearman_corr) / 2,
     }
 
@@ -1771,7 +1771,8 @@ def main():
                    "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16},
     }
 
-    acc_tasks = ["mnli", "mrpc", "sst-2", "qqp", "qnli", "rte","wnli"]
+    acc_tasks = ["mnli", "sst-2", "qnli", "rte","wnli"]
+    f1_tasks =["qqp","mrpc"]
     corr_tasks = ["sts-b"]
     mcc_tasks = ["cola"]
     qa_tasks = ["squad1", "squad2"]
@@ -2044,8 +2045,8 @@ def main():
 
                 # Train and evaluate
                 global_step = 0
-                best_dev_acc = 0.0
-                best_dev_acc_str = ''
+                best_dev_metric = 0.0
+                best_dev_metric_str = ''
                 infer_cnt = 0
                 infer_times = []
                 output_eval_file = os.path.join(
@@ -2138,24 +2139,29 @@ def main():
 
                             update_best = False
                             # 记录历史最好的结果
-                            if task_name in acc_tasks and result['acc'] > best_dev_acc:
-                                best_dev_acc = result['acc']
-                                best_dev_acc_str = str(best_dev_acc)
+                            if task_name in acc_tasks and result['acc'] > best_dev_metric:
+                                best_dev_metric = result['acc']
+                                best_dev_metric_str = str(best_dev_metric)
                                 update_best = True
 
-                            if task_name in corr_tasks and result['corr'] > best_dev_acc:
-                                best_dev_acc = result['corr']
-                                best_dev_acc_str = str(best_dev_acc)
+                            if task_name in corr_tasks and result['spearman'] > best_dev_metric:
+                                best_dev_metric = result['spearman']
+                                best_dev_metric_str = str(best_dev_metric)
                                 update_best = True
 
-                            if task_name in mcc_tasks and result['mcc'] > best_dev_acc:
-                                best_dev_acc = result['mcc']
-                                best_dev_acc_str = str(best_dev_acc)
+                            if task_name in mcc_tasks and result['mcc'] > best_dev_metric:
+                                best_dev_metric = result['mcc']
+                                best_dev_metric_str = str(best_dev_metric)
                                 update_best = True
 
-                            if task_name in qa_tasks and result['f1'] + result['em'] > best_dev_acc:
-                                best_dev_acc = result['f1'] + result['em']
-                                best_dev_acc_str = 'f1: {}; em: {}'.format(
+                            if task_name in f1_tasks and result['f1'] > best_dev_metric:
+                                best_dev_metric = result['f1']
+                                best_dev_metric_str = str(best_dev_metric)
+                                update_best = True
+
+                            if task_name in qa_tasks and result['f1'] + result['em'] > best_dev_metric:
+                                best_dev_metric = result['f1'] + result['em']
+                                best_dev_metric_str = 'f1: {}; em: {}'.format(
                                     result['f1'], result['em'])
                                 update_best = True
                             # 当出现更好的eval结果时，存储此时的model
@@ -2219,7 +2225,7 @@ def main():
                              "task_name = {}\n".format(task_name) + \
                              "architecture = {}\n".format(subbert_config) + \
                              "parameter size = {}\n".format(parameter_size) + \
-                             "best_acc = %s\n" % best_dev_acc_str + \
+                             "best_metric = %s\n" % best_dev_metric_str + \
                              "time_per_batch_infer = %.3f ms\n" % (sum(infer_times) / len(infer_times)) +\
                              "infer_cnt = %d\n" % infer_cnt +\
                              "**************E*************\n"
