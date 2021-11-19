@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 
 import os
 import re
+import shutil
 import sys
 import csv
 import math
@@ -1749,17 +1750,17 @@ def main():
     default_params = {
         "cola": {"num_train_epochs": 10, "max_seq_length": 64, "learning_rate": 1e-5,
                  "batch_size": 32, "eval_step": 50},
-        "mnli": {"num_train_epochs": 4, "max_seq_length": 128, "learning_rate": 3e-5,
+        "mnli": {"num_train_epochs": 8, "max_seq_length": 128, "learning_rate": 3e-5,
                  "eval_step": 500, "train_batch_size": 32},
-        "mrpc": {"num_train_epochs": 10, "max_seq_length": 128, "learning_rate": 2e-5,
+        "mrpc": {"num_train_epochs": 20, "max_seq_length": 128, "learning_rate": 2e-5,
                  "batch_size": 32, "eval_step": 10},
         "wnli": {"num_train_epochs": 10, "max_seq_length": 128, "learning_rate": 2e-5,
                 "batch_size": 32, "eval_step": 10},
         "sst-2": {"num_train_epochs": 4, "max_seq_length": 64, "learning_rate": 2e-5,
                   "eval_step": 100, "train_batch_size": 32},
-        "sts-b": {"num_train_epochs": 10, "max_seq_length": 128, "learning_rate": 3e-5,
+        "sts-b": {"num_train_epochs": 20, "max_seq_length": 128, "learning_rate": 3e-5,
                   "batch_size": 32, "eval_step": 10},
-        "qqp": {"num_train_epochs": 5, "max_seq_length": 128, "learning_rate": 2e-5,
+        "qqp": {"num_train_epochs": 8, "max_seq_length": 128, "learning_rate": 2e-5,
                 "batch_size": 32, "eval_step": 500},
         "qnli": {"num_train_epochs": 10, "max_seq_length": 128, "learning_rate": 2e-5,
                  "batch_size": 32, "eval_step": 500},
@@ -1897,6 +1898,9 @@ def main():
                 # Prepare task settings
                 # if not oncloud and os.path.exists(args.output_dir) and os.listdir(args.output_dir):
                 #     raise ValueError("Output directory ({}) already exists and is not empty.".format(args.output_dir))
+                if os.path.exists(args.output_dir):
+                    logger.info("Output directory ({}) already exists and is not empty.".format(args.output_dir))
+                    shutil.rmtree(args.output_dir)
                 if not os.path.exists(args.output_dir):
                     os.makedirs(args.output_dir)
 
@@ -2167,8 +2171,7 @@ def main():
                             # 当出现更好的eval结果时，存储此时的model
                             if update_best:
                                 # Save a trained model
-                                model_name = "{}_seed{}".format(
-                                    task_name, str(seed))
+                                model_name = "pytorch_model.bin"
                                 logging.info(
                                     "** ** * Saving fine-tuned model ** ** * ")
                                 # Only save the model it-self
