@@ -714,7 +714,7 @@ def do_eval(model, task_name, eval_dataloader,
         with torch.no_grad():
             input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch_
 
-            logits, _, _, _ = model(input_ids, segment_ids, input_mask)
+            logits, _, _, _, _ = model(input_ids, segment_ids, input_mask)
 
         # create eval loss and other metric required by the task
         if output_mode == "classification":
@@ -757,7 +757,7 @@ def do_predict(model, eval_dataloader, task_name,
         with torch.no_grad():
             input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch_
 
-            logits, _, _, _ = model(input_ids, segment_ids, input_mask)
+            logits, _, _, _, _ = model(input_ids, segment_ids, input_mask)
 
         # create eval loss and other metric required by the task
         # if output_mode == "classification":
@@ -974,15 +974,15 @@ def main():
 
     # intermediate distillation default parameters
     default_params = {
-        "cola": {"num_train_epochs": 60, "max_seq_length": 64, "eval_step": 20, "num_train_epochs_distill_prediction": 40},
-        "mnli": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
-        "mrpc": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 20},
-        "wnli": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
-        "sst-2": {"num_train_epochs": 30, "max_seq_length": 64, "eval_step": 100, "num_train_epochs_distill_prediction": 20},
-        "sts-b": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
-        "qqp": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
-        "qnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 10},
-        "rte": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 10, "num_train_epochs_distill_prediction": 15},
+        "cola": {"num_train_epochs": 50, "max_seq_length": 64, "eval_step": 20, "num_train_epochs_distill_prediction": 30},
+        "mnli": {"num_train_epochs": 6, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
+        "mrpc": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
+        "wnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
+        "sst-2": {"num_train_epochs": 15, "max_seq_length": 64, "eval_step": 100, "num_train_epochs_distill_prediction": 10},
+        "sts-b": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
+        "qqp": {"num_train_epochs": 6, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
+        "qnli": {"num_train_epochs": 15, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 10},
+        "rte": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10, "num_train_epochs_distill_prediction": 15},
         "squad1": {"num_train_epochs": 6, "max_seq_length": 384,
                    "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16, "num_train_epochs_distill_prediction": 3},
         "squad2": {"num_train_epochs": 6, "max_seq_length": 384,
@@ -1100,10 +1100,10 @@ def main():
         if not os.path.exists(tensorboard_log_save_dir):
             os.makedirs(tensorboard_log_save_dir)
         writer = SummaryWriter(log_dir=tensorboard_log_save_dir, flush_secs=30)
-        inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size,
-                                                        args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
+        # inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size,
+        #                                                 args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
         # writer.add_graph(teacher_model, inputs, use_strict_trace=False)
-        writer.add_graph(student_model, inputs, use_strict_trace=False)
+        # writer.add_graph(student_model, inputs)
 
     if args.do_eval:
         logger.info("***** Running evaluation *****")
@@ -1257,6 +1257,37 @@ def main():
                 loss_all = loss_all + loss
             return loss_all
 
+        def multi_layer_loss(student_layer, teacher_layer, is_rep=False):
+            hidden_size = student_layer[0].shape[-1]
+            student_layer_num = len(student_layer)
+            teacher_layer_num = len(teacher_layer)
+            assert teacher_layer_num % student_layer_num == 0
+            stage_layer_num = teacher_layer_num//student_layer_num
+            attention_list = []
+            loss = 0.
+            for i in range(student_layer_num):
+                tmp_student_layer = student_layer[i]
+                tmp_teacher_layer = teacher_layer[stage_layer_num *i: stage_layer_num*(i+1)]
+                # 如果是rep,则使用[CLS]计算attention
+                if is_rep:
+                    tmp_teacher_layer_avepool = torch.stack(
+                        [ft[:, 0, :] for ft in tmp_teacher_layer], 1)
+                    tmp_student_layer_avepool = tmp_student_layer[:, [0], :]
+                # 如果是QKV,则使用avepool计算attention
+                else:
+                    tmp_teacher_layer_avepool = torch.cat(
+                        [F.adaptive_avg_pool2d(ft, (1, hidden_size)) for ft in tmp_teacher_layer], 1)
+                    tmp_student_layer_avepool = F.adaptive_avg_pool2d(
+                        student_layer[i], (1, hidden_size))
+                attention_scores = torch.matmul(
+                    tmp_student_layer_avepool, tmp_teacher_layer_avepool.transpose(-2, -1))/np.sqrt(hidden_size)
+                attention_probs = torch.softmax(attention_scores, -1)
+                attention_list.append(attention_probs)
+                teacher_layer_fusion = torch.matmul(attention_probs, torch.stack(tmp_teacher_layer, 1).view(
+                    tmp_student_layer.shape[0], stage_layer_num, -1)).view(tmp_student_layer.size())
+                loss += loss_mse(tmp_student_layer, teacher_layer_fusion)
+            return loss, attention_list
+
         # Train and evaluate
         global_step = 0
         best_dev_metric = 0.0
@@ -1271,6 +1302,9 @@ def main():
             tr_fusion_rep_loss = 0.
             tr_resual_kr_simple_fusion_loss = 0.
             tr_resual_kr_enhanced_simple_fusion_loss = 0.
+            tr_Q_loss = 0.
+            tr_K_loss = 0.
+            tr_V_loss = 0.
 
             student_model.train()
             nb_tr_examples, nb_tr_steps = 0, 0
@@ -1289,38 +1323,41 @@ def main():
                 fusion_rep_loss = 0.
                 resual_kr_simple_fusion_loss = 0.
                 resual_kr_enhanced_simple_fusion_loss = 0.
+                Q_loss = 0.
+                K_loss = 0.
+                V_loss = 0.
 
                 is_student = False
                 if not args.pred_distill:
                     is_student = True
 
-                student_logits, student_atts, student_reps, student_att_probs = student_model(input_ids, segment_ids, input_mask,
-                                                                                              is_student=is_student)
+                student_logits, student_atts, student_reps, student_att_probs, student_QKV_list = student_model(input_ids, segment_ids, input_mask,
+                                                                                                                is_student=is_student)
                 with torch.no_grad():
-                    teacher_logits, teacher_atts, teacher_reps, teacher_att_probs = teacher_model(
+                    teacher_logits, teacher_atts, teacher_reps, teacher_att_probs, teacher_QKV_list = teacher_model(
                         input_ids, segment_ids, input_mask)
 
                 if not args.pred_distill:
-                    teacher_layer_num = len(teacher_atts)
-                    student_layer_num = len(student_atts)
-                    assert teacher_layer_num % student_layer_num == 0
-                    layers_per_block = int(
-                        teacher_layer_num / student_layer_num)
-                    new_teacher_atts = [teacher_atts[i * layers_per_block + layers_per_block - 1]
-                                        for i in range(student_layer_num)]
+                    # teacher_layer_num = len(teacher_atts)
+                    # student_layer_num = len(student_atts)
+                    # assert teacher_layer_num % student_layer_num == 0
+                    # layers_per_block = int(
+                    #     teacher_layer_num / student_layer_num)
+                    # new_teacher_atts = [teacher_atts[i * layers_per_block + layers_per_block - 1]
+                    #                     for i in range(student_layer_num)]
 
-                    for student_att, teacher_att in zip(student_atts, new_teacher_atts):
-                        student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
-                                                  student_att)  # 将被mask掉的位置置为0
-                        teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
-                                                  teacher_att)
+                    # for student_att, teacher_att in zip(student_atts, new_teacher_atts):
+                    #     student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
+                    #                               student_att)  # 将被mask掉的位置置为0
+                    #     teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
+                    #                               teacher_att)
 
-                        tmp_loss = loss_mse(student_att, teacher_att)
-                        att_loss += tmp_loss
+                    #     tmp_loss = loss_mse(student_att, teacher_att)
+                    #     att_loss += tmp_loss
 
-                    new_teacher_reps = [teacher_reps[i * layers_per_block]
-                                        for i in range(student_layer_num + 1)]
-                    new_student_reps = student_reps  # ？student的fit_dense为什么只有1个
+                    # new_teacher_reps = [teacher_reps[i * layers_per_block]
+                    #                     for i in range(student_layer_num + 1)]
+                    # new_student_reps = student_reps  # ？student的fit_dense为什么只有1个
 
                     # simple_fusion
                     # new_teacher_att_probs = [teacher_att_probs[i * layers_per_block + layers_per_block - 1]
@@ -1358,17 +1395,31 @@ def main():
 
                     # rep_loss=hcl(new_student_reps,new_teacher_reps)
 
-                    for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
-                        tmp_loss = loss_mse(student_rep, teacher_rep)
-                        rep_loss += tmp_loss
+                    # for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
+                    #     tmp_loss = loss_mse(student_rep, teacher_rep)
+                    #     rep_loss += tmp_loss
 
                     # vanilla knowledge review
                     # att_loss=att_knowledge_review(student_atts,new_teacher_atts)
                     # rep_loss =rep_knowledge_review(new_student_reps,new_teacher_reps)
-
-                    loss = rep_loss + att_loss
-                    tr_att_loss += att_loss.item()
+                    emb_loss = embedding_loss(student_reps[0], teacher_reps[0])
+                    tr_emb_loss += emb_loss.item()
+                    rep_loss,rep_att_list = multi_layer_loss(
+                        student_reps[1:], teacher_reps[1:],is_rep=True)
                     tr_rep_loss += rep_loss.item()
+                    Q_loss,Q_att_list = multi_layer_loss(
+                        student_QKV_list[0], teacher_QKV_list[0])
+                    K_loss,K_att_list = multi_layer_loss(
+                        student_QKV_list[1], teacher_QKV_list[1])
+                    V_loss,V_att_list = multi_layer_loss(
+                        student_QKV_list[2], teacher_QKV_list[2])
+                    tr_Q_loss += Q_loss.item()
+                    tr_K_loss += K_loss.item()
+                    tr_V_loss += V_loss.item()
+                    loss = emb_loss+rep_loss+Q_loss+K_loss+V_loss
+                    # tr_att_loss += att_loss.item()
+                    # tr_rep_loss += rep_loss.item()
+
                 else:
                     if output_mode == "classification":  # ！ 这里只是使用了soft label，没用ground truth
                         cls_loss = soft_cross_entropy(student_logits / args.temperature,
@@ -1412,8 +1463,14 @@ def main():
 
                     loss = tr_loss / (step + 1)
                     cls_loss = tr_cls_loss / (step + 1)
-                    att_loss = tr_att_loss / (step + 1)
                     rep_loss = tr_rep_loss / (step + 1)
+                    emb_loss = tr_emb_loss / (step + 1)
+                    Q_loss = tr_Q_loss / (step + 1)
+                    K_loss = tr_K_loss / (step + 1)
+                    V_loss = tr_V_loss / (step + 1)
+
+                    # att_loss = tr_att_loss / (step + 1)
+                    # rep_loss = tr_rep_loss / (step + 1)
                     # vanilla knowledge review
                     # att_loss = tr_att_loss / (step + 1)
                     # rep_loss = tr_rep_loss / (step + 1)
@@ -1440,8 +1497,14 @@ def main():
                             task_name), cls_loss, global_step)
 
                     if not args.pred_distill:
-                        result['att_loss'] = att_loss
+                        result['emb_loss'] = emb_loss
                         result['rep_loss'] = rep_loss
+                        result['Q_loss'] = Q_loss
+                        result['K_loss'] = K_loss
+                        result['V_loss'] = V_loss
+
+                        # result['att_loss'] = att_loss
+                        # result['rep_loss'] = rep_loss
                         # vanilla knowledge review
                         # result['att_loss'] = att_loss
                         # result['rep_loss'] = rep_loss
@@ -1455,10 +1518,21 @@ def main():
                         # result['emb_loss'] = emb_loss
                         # result['resual_kr_enhanced_simple_fusion_loss'] = resual_kr_enhanced_simple_fusion_loss
 
-                        writer.add_scalar('{} att_loss'.format(
-                            task_name), att_loss, global_step)
+                        writer.add_scalar('{} emb_loss'.format(
+                            task_name), emb_loss, global_step)
                         writer.add_scalar('{} rep_loss'.format(
                             task_name), rep_loss, global_step)
+                        writer.add_scalar('{} Q_loss'.format(
+                            task_name), Q_loss, global_step)
+                        writer.add_scalar('{} K_loss'.format(
+                            task_name), K_loss, global_step)
+                        writer.add_scalar('{} V_loss'.format(
+                            task_name), V_loss, global_step)
+
+                        # writer.add_scalar('{} att_loss'.format(
+                        #     task_name), att_loss, global_step)
+                        # writer.add_scalar('{} rep_loss'.format(
+                        #     task_name), rep_loss, global_step)
                         # vanilla knowledge review
                         # writer.add_scalar('{} att_loss'.format(task_name),att_loss,global_step)
                         # writer.add_scalar('{} rep_loss'.format(task_name),rep_loss,global_step)

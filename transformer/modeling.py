@@ -392,6 +392,7 @@ class BertSelfAttention(nn.Module):
         mixed_query_layer = self.query(hidden_states)
         mixed_key_layer = self.key(hidden_states)
         mixed_value_layer = self.value(hidden_states)
+        QKV_list=[mixed_query_layer,mixed_key_layer,mixed_value_layer]
 
         query_layer = self.transpose_for_scores(mixed_query_layer)
         key_layer = self.transpose_for_scores(mixed_key_layer)
@@ -417,7 +418,7 @@ class BertSelfAttention(nn.Module):
         new_context_layer_shape = context_layer.size()[
             :-2] + (self.all_head_size,)
         context_layer = context_layer.view(*new_context_layer_shape)
-        return context_layer, attention_scores, attention_probs
+        return context_layer, attention_scores, attention_probs,QKV_list
 
 
 class BertAttention(nn.Module):
@@ -428,9 +429,9 @@ class BertAttention(nn.Module):
         self.output = BertSelfOutput(config)
 
     def forward(self, input_tensor, attention_mask):
-        self_output, layer_att, layer_att_probs = self.self(input_tensor, attention_mask)
+        self_output, layer_att, layer_att_probs,QKV_list = self.self(input_tensor, attention_mask)
         attention_output = self.output(self_output, input_tensor)
-        return attention_output, layer_att, layer_att_probs
+        return attention_output, layer_att, layer_att_probs,QKV_list
 
 
 class BertSelfOutput(nn.Module):
@@ -492,12 +493,12 @@ class BertLayer(nn.Module):
         self.output = BertOutput(config)
 
     def forward(self, hidden_states, attention_mask):
-        attention_output, layer_att, layer_att_probs = self.attention(
+        attention_output, layer_att, layer_att_probs,QKV_list = self.attention(
             hidden_states, attention_mask)
         intermediate_output = self.intermediate(attention_output)
         layer_output = self.output(intermediate_output, attention_output)
 
-        return layer_output, layer_att, layer_att_probs
+        return layer_output, layer_att, layer_att_probs,QKV_list
 
 
 class BertEncoder(nn.Module):
@@ -510,15 +511,17 @@ class BertEncoder(nn.Module):
         all_encoder_layers = []
         all_encoder_atts = []
         all_encoder_att_probs=[]
+        all_encoder_QKV_list=[]
         for _, layer_module in enumerate(self.layer):
             all_encoder_layers.append(hidden_states)
-            hidden_states, layer_att, layer_att_probs = layer_module(
+            hidden_states, layer_att, layer_att_probs,QKV_list = layer_module(
                 hidden_states, attention_mask)
             all_encoder_atts.append(layer_att)
             all_encoder_att_probs.append(layer_att_probs)
+            all_encoder_QKV_list.append(QKV_list)
 
         all_encoder_layers.append(hidden_states)
-        return all_encoder_layers, all_encoder_atts,all_encoder_att_probs
+        return all_encoder_layers, all_encoder_atts,all_encoder_att_probs,all_encoder_QKV_list
 
 
 class BertPooler(nn.Module):
@@ -854,7 +857,7 @@ class BertModel(BertPreTrainedModel):
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
 
         embedding_output = self.embeddings(input_ids, token_type_ids)
-        encoded_layers, layer_atts, layer_att_probs = self.encoder(embedding_output,
+        encoded_layers, layer_atts, layer_att_probs,QKV_list = self.encoder(embedding_output,
                                                   extended_attention_mask)
 
         pooled_output = self.pooler(encoded_layers)
@@ -864,7 +867,7 @@ class BertModel(BertPreTrainedModel):
         if not output_att:
             return encoded_layers, pooled_output
 
-        return encoded_layers, layer_atts, pooled_output, layer_att_probs
+        return encoded_layers, layer_atts, pooled_output, layer_att_probs,QKV_list
 
 
 class BertForPreTraining(BertPreTrainedModel):
@@ -1149,31 +1152,51 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
         self.classifier = nn.Linear(config.hidden_size, num_labels)
         # self.fit_dense = nn.Linear(config.hidden_size, fit_size)# !修改
         if kwargs['is_student']:
-            self.fit_denses = nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers+1)])
-            self.repReviewKD=ReviewKD(1,config.num_hidden_layers+1)
-            self.attReviewKd=ReviewKD(config.num_attention_heads,config.num_hidden_layers)
+            self.rep_fit_denses = nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers+1)])
+            self.Q_fit_denses=nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers)])
+            self.K_fit_denses=nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers)])
+            self.V_fit_denses=nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers)])
+            self.repReviewKD=ReviewKD(1,config.num_hidden_layers)
+            self.Q_ReviewKD=ReviewKD(1,config.num_hidden_layers)
+            self.K_ReviewKD=ReviewKD(1,config.num_hidden_layers)
+            self.V_ReviewKD=ReviewKD(1,config.num_hidden_layers)
+            # self.attReviewKd=ReviewKD(config.num_attention_heads,config.num_hidden_layers)
         self.apply(self.init_bert_weights)
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None,
                 labels=None, is_student=False):
 
-        sequence_output, att_output, pooled_output, att_probs = self.bert(input_ids, token_type_ids, attention_mask,
+        sequence_output, att_output, pooled_output, att_probs,QKV_lists = self.bert(input_ids, token_type_ids, attention_mask,
                                                                output_all_encoded_layers=True, output_att=True)
 
         logits = self.classifier(torch.relu(pooled_output))
 
-        tmp = []
+        rep_tmp,Q_tmp,K_tmp,V_tmp = [],[],[],[]
         if is_student:
-            for fit_dense,sequence_layer in zip(self.fit_denses,sequence_output):
-                tmp.append(fit_dense(sequence_layer))
+            for rep_fit_dense,sequence_layer in zip(self.rep_fit_denses,sequence_output):
+                rep_tmp.append(rep_fit_dense(sequence_layer))
             # for s_id, sequence_layer in enumerate(sequence_output):
             #     tmp.append(self.fit_dense(sequence_layer))
-            sequence_output = tmp
-            # student_fusion_reps_list=self.cal_fusion_reps(att_probs,sequence_output[1:])
+            sequence_output = rep_tmp[1:]
             sequence_output=self.repReviewKD(sequence_output)
-            att_output=self.attReviewKd(att_output)
+            sequence_output.insert(0,rep_tmp[0])
+            for Q_fit_dense,K_fit_dense,V_fit_dense,QKV_list in zip(self.Q_fit_denses,self.K_fit_denses,self.V_fit_denses,QKV_lists):
+                Q_tmp.append(Q_fit_dense(QKV_list[0]))
+                K_tmp.append(K_fit_dense(QKV_list[1]))
+                V_tmp.append(V_fit_dense(QKV_list[2]))
+            Q_tmp=self.Q_ReviewKD(Q_tmp)
+            K_tmp=self.K_ReviewKD(K_tmp)
+            V_tmp=self.V_ReviewKD(V_tmp)
+            QKV_list=[Q_tmp,K_tmp,V_tmp]
+            # student_fusion_reps_list=self.cal_fusion_reps(att_probs,sequence_output[1:])
+            # att_output=self.attReviewKd(att_output)
             # return logits, att_output, sequence_output, att_probs,student_fusion_reps_list
-        return logits, att_output, sequence_output, att_probs
+        else:
+            Q_tmp=[tmp[0] for tmp in QKV_lists]
+            K_tmp=[tmp[1] for tmp in QKV_lists]
+            V_tmp=[tmp[2] for tmp in QKV_lists]
+            QKV_list=[Q_tmp,K_tmp,V_tmp]
+        return logits, att_output, sequence_output, att_probs,QKV_list
 
     # def cal_fusion_reps(self,att_probs_list, hidden_states_list):
     #         fusion_reps_list = []
