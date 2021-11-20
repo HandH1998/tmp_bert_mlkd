@@ -974,13 +974,13 @@ def main():
 
     # intermediate distillation default parameters
     default_params = {
-        "cola": {"num_train_epochs": 60, "max_seq_length": 64, "eval_step": 20, "num_train_epochs_distill_prediction": 40},
-        "mnli": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
+        "cola": {"num_train_epochs": 50, "max_seq_length": 64, "eval_step": 20, "num_train_epochs_distill_prediction": 30},
+        "mnli": {"num_train_epochs": 6, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
         "mrpc": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 20},
         "wnli": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
         "sst-2": {"num_train_epochs": 30, "max_seq_length": 64, "eval_step": 100, "num_train_epochs_distill_prediction": 20},
         "sts-b": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
-        "qqp": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
+        "qqp": {"num_train_epochs": 6, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
         "qnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 10},
         "rte": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 10, "num_train_epochs_distill_prediction": 15},
         "squad1": {"num_train_epochs": 6, "max_seq_length": 384,
