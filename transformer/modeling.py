@@ -392,11 +392,12 @@ class BertSelfAttention(nn.Module):
         mixed_query_layer = self.query(hidden_states)
         mixed_key_layer = self.key(hidden_states)
         mixed_value_layer = self.value(hidden_states)
-        QKV_list=[mixed_query_layer,mixed_key_layer,mixed_value_layer]
+        # QKV_list=[mixed_query_layer,mixed_key_layer,mixed_value_layer]
 
         query_layer = self.transpose_for_scores(mixed_query_layer)
         key_layer = self.transpose_for_scores(mixed_key_layer)
         value_layer = self.transpose_for_scores(mixed_value_layer)
+        QKV_list=[query_layer,key_layer,value_layer]
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(
@@ -1144,7 +1145,7 @@ class BertForSentencePairClassification(BertPreTrainedModel):
 
 from reviewkd import ReviewKD
 class TinyBertForSequenceClassification(BertPreTrainedModel):
-    def __init__(self, config, num_labels, fit_size=768, **kwargs):
+    def __init__(self, config, num_labels, fit_size=768, num_heads=12,**kwargs):
         super(TinyBertForSequenceClassification, self).__init__(config)
         self.num_labels = num_labels
         self.bert = BertModel(config)
@@ -1153,13 +1154,13 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
         # self.fit_dense = nn.Linear(config.hidden_size, fit_size)# !修改
         if kwargs['is_student']:
             self.rep_fit_denses = nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers+1)])
-            self.Q_fit_denses=nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers)])
-            self.K_fit_denses=nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers)])
-            self.V_fit_denses=nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers)])
+            self.Q_fit_denses=nn.ModuleList([nn.ModuleList([nn.Linear(config.hidden_size//num_heads, fit_size//num_heads) for _ in range(num_heads)]) for _ in  range(config.num_hidden_layers)])
+            self.K_fit_denses=nn.ModuleList([nn.ModuleList([nn.Linear(config.hidden_size//num_heads, fit_size//num_heads) for _ in range(num_heads)]) for _ in  range(config.num_hidden_layers)])
+            self.V_fit_denses=nn.ModuleList([nn.ModuleList([nn.Linear(config.hidden_size//num_heads, fit_size//num_heads) for _ in range(num_heads)]) for _ in  range(config.num_hidden_layers)])
             self.repReviewKD=ReviewKD(1,config.num_hidden_layers)
-            self.Q_ReviewKD=ReviewKD(1,config.num_hidden_layers)
-            self.K_ReviewKD=ReviewKD(1,config.num_hidden_layers)
-            self.V_ReviewKD=ReviewKD(1,config.num_hidden_layers)
+            self.Q_ReviewKD=ReviewKD(num_heads,config.num_hidden_layers)
+            self.K_ReviewKD=ReviewKD(num_heads,config.num_hidden_layers)
+            self.V_ReviewKD=ReviewKD(num_heads,config.num_hidden_layers)
             # self.attReviewKd=ReviewKD(config.num_attention_heads,config.num_hidden_layers)
         self.apply(self.init_bert_weights)
 
@@ -1181,9 +1182,12 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
             sequence_output=self.repReviewKD(sequence_output)
             sequence_output.insert(0,rep_tmp[0])
             for Q_fit_dense,K_fit_dense,V_fit_dense,QKV_list in zip(self.Q_fit_denses,self.K_fit_denses,self.V_fit_denses,QKV_lists):
-                Q_tmp.append(Q_fit_dense(QKV_list[0]))
-                K_tmp.append(K_fit_dense(QKV_list[1]))
-                V_tmp.append(V_fit_dense(QKV_list[2]))
+                Q_tmp.append(self.linearTransform(QKV_list[0],Q_fit_dense))
+                K_tmp.append(self.linearTransform(QKV_list[1],K_fit_dense))
+                V_tmp.append(self.linearTransform(QKV_list[2],V_fit_dense))
+                # Q_tmp.append(Q_fit_dense(QKV_list[0]))
+                # K_tmp.append(K_fit_dense(QKV_list[1]))
+                # V_tmp.append(V_fit_dense(QKV_list[2]))
             Q_tmp=self.Q_ReviewKD(Q_tmp)
             K_tmp=self.K_ReviewKD(K_tmp)
             V_tmp=self.V_ReviewKD(V_tmp)
@@ -1198,6 +1202,11 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
             QKV_list=[Q_tmp,K_tmp,V_tmp]
         return logits, att_output, sequence_output, att_probs,QKV_list
 
+    def linearTransform(self,values,linearFunc):
+        tmp=[]
+        for i,linear in enumerate(linearFunc):
+            tmp.append(linear(values[:,i,::]))
+        return torch.stack(tmp,1)
     # def cal_fusion_reps(self,att_probs_list, hidden_states_list):
     #         fusion_reps_list = []
     #         for att_probs, hidden_states in zip(att_probs_list, hidden_states_list):

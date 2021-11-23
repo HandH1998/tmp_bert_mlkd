@@ -1276,15 +1276,19 @@ def main():
                 # 如果是QKV,则使用avepool计算attention
                 else:
                     tmp_teacher_layer_avepool = torch.cat(
-                        [F.adaptive_avg_pool2d(ft, (1, hidden_size)) for ft in tmp_teacher_layer], 1)
+                        [F.adaptive_avg_pool2d(ft, (1, hidden_size)) for ft in tmp_teacher_layer], 2)
                     tmp_student_layer_avepool = F.adaptive_avg_pool2d(
                         student_layer[i], (1, hidden_size))
                 attention_scores = torch.matmul(
                     tmp_student_layer_avepool, tmp_teacher_layer_avepool.transpose(-2, -1))/np.sqrt(hidden_size)
                 attention_probs = torch.softmax(attention_scores, -1)
                 attention_list.append(attention_probs)
-                teacher_layer_fusion = torch.matmul(attention_probs, torch.stack(tmp_teacher_layer, 1).view(
-                    tmp_student_layer.shape[0], stage_layer_num, -1)).view(tmp_student_layer.size())
+                if is_rep:
+                    teacher_layer_fusion = torch.matmul(attention_probs, torch.stack(tmp_teacher_layer, 1).view(
+                        tmp_student_layer.shape[0], stage_layer_num, -1)).view(tmp_student_layer.size())
+                else:
+                    teacher_layer_fusion = torch.matmul(attention_probs, torch.stack(tmp_teacher_layer, 2).view(
+                        tmp_student_layer.shape[0], tmp_student_layer.shape[1], stage_layer_num, -1)).view(tmp_student_layer.size())
                 loss += loss_mse(tmp_student_layer, teacher_layer_fusion)
             return loss, attention_list
 
@@ -1347,10 +1351,10 @@ def main():
                     #                     for i in range(student_layer_num)]
 
                     # for student_att, teacher_att in zip(student_atts, new_teacher_atts):
-                    #     student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
-                    #                               student_att)  # 将被mask掉的位置置为0
-                    #     teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
-                    #                               teacher_att)
+                        # student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
+                        #                           student_att)  # 将被mask掉的位置置为0
+                        # teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
+                        #                           teacher_att)
 
                     #     tmp_loss = loss_mse(student_att, teacher_att)
                     #     att_loss += tmp_loss
