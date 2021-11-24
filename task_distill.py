@@ -1275,6 +1275,9 @@ def main():
                     tmp_student_layer_avepool = tmp_student_layer[:, [0], :]
                 # 如果是QKV,则使用avepool计算attention
                 else:
+                    tmp_student_layer = torch.where(tmp_student_layer <= -1e2, torch.zeros_like(tmp_student_layer).to(device),
+                                                tmp_student_layer)  # 将被mask掉的位置置为0
+                    tmp_teacher_layer = [torch.where(ft <= -1e2, torch.zeros_like(ft).to(device),ft) for ft in tmp_teacher_layer]
                     tmp_teacher_layer_avepool = torch.cat(
                         [F.adaptive_avg_pool2d(ft, (1, hidden_size)) for ft in tmp_teacher_layer], 2)
                     tmp_student_layer_avepool = F.adaptive_avg_pool2d(
@@ -1289,10 +1292,7 @@ def main():
                 else:
                     teacher_layer_fusion = torch.matmul(attention_probs, torch.stack(tmp_teacher_layer, 2).view(
                         tmp_student_layer.shape[0], tmp_student_layer.shape[1], stage_layer_num, -1)).view(tmp_student_layer.size())
-                    tmp_student_layer = torch.where(tmp_student_layer <= -1e2, torch.zeros_like(tmp_student_layer).to(device),
-                                                tmp_student_layer)  # 将被mask掉的位置置为0
-                    teacher_layer_fusion = torch.where(teacher_layer_fusion <= -1e2, torch.zeros_like(teacher_layer_fusion).to(device),
-                                                teacher_layer_fusion)
+                    
                 loss += loss_mse(tmp_student_layer, teacher_layer_fusion)
             return loss, attention_list
 
