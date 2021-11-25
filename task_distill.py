@@ -976,13 +976,13 @@ def main():
     default_params = {
         "cola": {"num_train_epochs": 50, "max_seq_length": 64, "eval_step": 20, "num_train_epochs_distill_prediction": 30},
         "mnli": {"num_train_epochs": 6, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
-        "mrpc": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 20},
-        "wnli": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
-        "sst-2": {"num_train_epochs": 30, "max_seq_length": 64, "eval_step": 100, "num_train_epochs_distill_prediction": 20},
-        "sts-b": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
+        "mrpc": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
+        "wnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
+        "sst-2": {"num_train_epochs": 15, "max_seq_length": 64, "eval_step": 100, "num_train_epochs_distill_prediction": 10},
+        "sts-b": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
         "qqp": {"num_train_epochs": 6, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
-        "qnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 10},
-        "rte": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 10, "num_train_epochs_distill_prediction": 15},
+        "qnli": {"num_train_epochs": 10, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 10},
+        "rte": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10, "num_train_epochs_distill_prediction": 15},
         "squad1": {"num_train_epochs": 6, "max_seq_length": 384,
                    "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16, "num_train_epochs_distill_prediction": 3},
         "squad2": {"num_train_epochs": 6, "max_seq_length": 384,
@@ -1100,10 +1100,10 @@ def main():
         if not os.path.exists(tensorboard_log_save_dir):
             os.makedirs(tensorboard_log_save_dir)
         writer = SummaryWriter(log_dir=tensorboard_log_save_dir, flush_secs=30)
-        inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size,
-                                                        args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
+        # inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size,
+        #                                                 args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
         # writer.add_graph(teacher_model, inputs, use_strict_trace=False)
-        writer.add_graph(student_model, inputs, use_strict_trace=False)
+        # writer.add_graph(student_model, inputs, use_strict_trace=False)
 
     if args.do_eval:
         logger.info("***** Running evaluation *****")
@@ -1243,13 +1243,17 @@ def main():
                 loss = F.mse_loss(fs, ft, reduction='mean')
                 cnt = 1.0
                 tot = 1.0
-                for l in [2, 3, 4]:
+                l_list=[]
+                while h%2 ==0:
+                    h=h//2
+                    l_list.append(h)
+                for l in l_list:
                     # if l >= h:
                     #     continue
-                    tmpfs = F.avg_pool2d(fs, (l, 1), stride=1)
-                    tmpft = F.avg_pool2d(ft, (l, 1), stride=1)
-                    # tmpfs = F.adaptive_avg_pool2d(fs, (l, hidden_size))
-                    # tmpft = F.adaptive_avg_pool2d(ft, (l, hidden_size))
+                    # tmpfs = F.avg_pool2d(fs, (l, 1), stride=1)
+                    # tmpft = F.avg_pool2d(ft, (l, 1), stride=1)
+                    tmpfs = F.adaptive_avg_pool2d(fs, (l, w))
+                    tmpft = F.adaptive_avg_pool2d(ft, (l, w))
                     cnt /= 2.0
                     loss += F.mse_loss(tmpfs, tmpft, reduction='mean') * cnt
                     tot += cnt
@@ -1315,7 +1319,7 @@ def main():
                         teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
                                                   teacher_att)
 
-                        tmp_loss = loss_mse(student_att, teacher_att)
+                        tmp_loss = hcl([student_att], [teacher_att])
                         att_loss += tmp_loss
 
                     new_teacher_reps = [teacher_reps[i * layers_per_block]
@@ -1356,11 +1360,11 @@ def main():
                     # tr_resual_kr_simple_fusion_loss += resual_kr_simple_fusion_loss.item()
                     # tr_fusion_rep_loss +=fusion_rep_loss.item()
 
-                    # rep_loss=hcl(new_student_reps,new_teacher_reps)
+                    rep_loss=hcl(new_student_reps,new_teacher_reps)
 
-                    for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
-                        tmp_loss = loss_mse(student_rep, teacher_rep)
-                        rep_loss += tmp_loss
+                    # for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
+                    #     tmp_loss = loss_mse(student_rep, teacher_rep)
+                    #     rep_loss += tmp_loss
 
                     # vanilla knowledge review
                     # att_loss=att_knowledge_review(student_atts,new_teacher_atts)
