@@ -1151,7 +1151,7 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
         if kwargs['is_student']:
             self.fit_denses = nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers+1)])
             self.repReviewKD=ReviewKD(1,config.num_hidden_layers+1)
-            self.attReviewKd=ReviewKD(config.num_attention_heads,config.num_hidden_layers)
+            # self.attReviewKd=ReviewKD(config.num_attention_heads,config.num_hidden_layers)
         self.apply(self.init_bert_weights)
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None,
@@ -1171,7 +1171,7 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
             sequence_output = tmp
             # student_fusion_reps_list=self.cal_fusion_reps(att_probs,sequence_output[1:])
             sequence_output=self.repReviewKD(sequence_output)
-            att_output=self.attReviewKd(att_output)
+            # att_output=self.attReviewKd(att_output)
             # return logits, att_output, sequence_output, att_probs,student_fusion_reps_list
         return logits, att_output, sequence_output, att_probs
 
