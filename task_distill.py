@@ -974,15 +974,15 @@ def main():
 
     # intermediate distillation default parameters
     default_params = {
-        "cola": {"num_train_epochs": 60, "max_seq_length": 64, "eval_step": 20, "num_train_epochs_distill_prediction": 40},
-        "mnli": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
-        "mrpc": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 20},
-        "wnli": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
-        "sst-2": {"num_train_epochs": 30, "max_seq_length": 64, "eval_step": 100, "num_train_epochs_distill_prediction": 20},
-        "sts-b": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
-        "qqp": {"num_train_epochs": 8, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
-        "qnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 10},
-        "rte": {"num_train_epochs": 30, "max_seq_length": 128, "eval_step": 10, "num_train_epochs_distill_prediction": 15},
+        "cola": {"num_train_epochs": 50, "max_seq_length": 64, "eval_step": 20, "num_train_epochs_distill_prediction": 30},
+        "mnli": {"num_train_epochs": 6, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
+        "mrpc": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
+        "wnli": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
+        "sst-2": {"num_train_epochs": 15, "max_seq_length": 64, "eval_step": 100, "num_train_epochs_distill_prediction": 10},
+        "sts-b": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 20, "num_train_epochs_distill_prediction": 15},
+        "qqp": {"num_train_epochs": 6, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
+        "qnli": {"num_train_epochs": 10, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 10},
+        "rte": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10, "num_train_epochs_distill_prediction": 15},
         "squad1": {"num_train_epochs": 6, "max_seq_length": 384,
                    "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16, "num_train_epochs_distill_prediction": 3},
         "squad2": {"num_train_epochs": 6, "max_seq_length": 384,
@@ -1103,7 +1103,7 @@ def main():
         inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size,
                                                         args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
         # writer.add_graph(teacher_model, inputs, use_strict_trace=False)
-        writer.add_graph(student_model, inputs, use_strict_trace=False)
+        writer.add_graph(student_model, inputs)
 
     if args.do_eval:
         logger.info("***** Running evaluation *****")
