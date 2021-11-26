@@ -1103,7 +1103,7 @@ def main():
         inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size,
                                                         args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
         # writer.add_graph(teacher_model, inputs, use_strict_trace=False)
-        writer.add_graph(student_model, inputs, use_strict_trace=False)
+        writer.add_graph(student_model, inputs)
 
     if args.do_eval:
         logger.info("***** Running evaluation *****")
