@@ -844,8 +844,13 @@ def main():
                         default="model/fine-tuned_pretrained_model/mrpc/on_original_data",
                         type=str,
                         help="The teacher model dir.")
+    # parser.add_argument("--student_model",
+    #                     default="model/distilled_pretrained_model/2nd_General_TinyBERT_4L_312D",
+    #                     type=str,
+    #                     required=False,
+    #                     help="The student model dir.")
     parser.add_argument("--student_model",
-                        default="model/distilled_pretrained_model/2nd_General_TinyBERT_4L_312D",
+                        default="model/distilled_fine-tuned_model/mrpc/on_original_data",
                         type=str,
                         required=False,
                         help="The student model dir.")
@@ -1419,7 +1424,7 @@ def main():
                 else:
                     student_rep=student_reps[-1][:,0,:]
                     teacher_rep=teacher_reps[-1][:,0,:]
-                    batch_rkd_rep_loss=rkd_loss(student_rep,teacher_rep)
+                    batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
                     if output_mode == "classification":  # ！ 这里只是使用了soft label，没用ground truth
                         cls_loss = soft_cross_entropy(student_logits / args.temperature,
                                                       teacher_logits / args.temperature)
