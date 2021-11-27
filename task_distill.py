@@ -1256,6 +1256,41 @@ def main():
                 loss = loss / tot
                 loss_all = loss_all + loss
             return loss_all
+        def pdist(e, squared=False, eps=1e-12):
+            e_square= e.pow(2).sum(dim=-1)
+            # e_square = e.pow(2).sum(dim=1)
+            # prod = e @ e.t()
+            prod = torch.matmul(e,e.transpose(-2,-1))
+            # res = (e_square.unsqueeze(1) + e_square.unsqueeze(0) - 2 * prod).clamp(min=eps)
+            res = (e_square.unsqueeze(-1) + e_square.unsqueeze(-2) - 2 * prod).clamp(min=eps)
+
+            if not squared:
+                res = res.sqrt()
+
+            res = res.clone()
+            # res[range(len(e)), range(len(e))] = 0
+            res[...,range(e.shape[-2]), range(e.shape[-2])] = 0
+            return res
+        def rkd_loss(student, teacher):
+            loss=0.
+            for st,te in zip(student,teacher):
+                with torch.no_grad():
+                    t_d = pdist(te, squared=False)
+                    mean_td = t_d[t_d>0].mean()
+                    t_d = t_d / mean_td
+
+                d = pdist(st, squared=False)
+                mean_d = d[d>0].mean()
+                d = d / mean_d
+
+                loss += F.smooth_l1_loss(d, t_d, reduction='mean')
+            return loss
+        def align_loss(student,teacher):
+            loss=0.
+            for st,te in zip(student,teacher):
+                loss +=loss_mse(st,te)
+            return loss
+
 
         # Train and evaluate
         global_step = 0
@@ -1271,6 +1306,8 @@ def main():
             tr_fusion_rep_loss = 0.
             tr_resual_kr_simple_fusion_loss = 0.
             tr_resual_kr_enhanced_simple_fusion_loss = 0.
+            tr_rkd_att_loss=0.
+            tr_rkd_rep_loss=0.
 
             student_model.train()
             nb_tr_examples, nb_tr_steps = 0, 0
@@ -1289,6 +1326,8 @@ def main():
                 fusion_rep_loss = 0.
                 resual_kr_simple_fusion_loss = 0.
                 resual_kr_enhanced_simple_fusion_loss = 0.
+                rkd_att_loss = 0.
+                rkd_rep_loss = 0.
 
                 is_student = False
                 if not args.pred_distill:
@@ -1308,15 +1347,18 @@ def main():
                         teacher_layer_num / student_layer_num)
                     new_teacher_atts = [teacher_atts[i * layers_per_block + layers_per_block - 1]
                                         for i in range(student_layer_num)]
+                    student_atts=[torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),student_att) for student_att in student_atts]
+                    teacher_atts=[torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),teacher_att) for teacher_att in new_teacher_atts]
+                    att_loss=align_loss(student_atts,teacher_atts)
+                    rkd_att_loss=rkd_loss(student_atts,teacher_atts)
+                    # for student_att, teacher_att in zip(student_atts, new_teacher_atts):
+                    #     student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
+                    #                               student_att)  # 将被mask掉的位置置为0
+                    #     teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
+                    #                               teacher_att)
 
-                    for student_att, teacher_att in zip(student_atts, new_teacher_atts):
-                        student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
-                                                  student_att)  # 将被mask掉的位置置为0
-                        teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
-                                                  teacher_att)
-
-                        tmp_loss = loss_mse(student_att, teacher_att)
-                        att_loss += tmp_loss
+                    #     tmp_loss = loss_mse(student_att, teacher_att)
+                    #     att_loss += tmp_loss
 
                     new_teacher_reps = [teacher_reps[i * layers_per_block]
                                         for i in range(student_layer_num + 1)]
@@ -1358,15 +1400,18 @@ def main():
 
                     # rep_loss=hcl(new_student_reps,new_teacher_reps)
 
-                    for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
-                        tmp_loss = loss_mse(student_rep, teacher_rep)
-                        rep_loss += tmp_loss
+                    # for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
+                    #     tmp_loss = loss_mse(student_rep, teacher_rep)
+                    #     rep_loss += tmp_loss
 
                     # vanilla knowledge review
                     # att_loss=att_knowledge_review(student_atts,new_teacher_atts)
                     # rep_loss =rep_knowledge_review(new_student_reps,new_teacher_reps)
-
-                    loss = rep_loss + att_loss
+                    rep_loss=align_loss(new_student_reps,new_teacher_reps)
+                    rkd_rep_loss=rkd_loss(new_student_reps,new_teacher_reps)
+                    loss = rep_loss + att_loss+rkd_att_loss+rkd_rep_loss
+                    tr_rkd_att_loss +=rkd_att_loss.item()
+                    tr_rkd_rep_loss +=rkd_rep_loss.item()
                     tr_att_loss += att_loss.item()
                     tr_rep_loss += rep_loss.item()
                 else:
@@ -1414,6 +1459,8 @@ def main():
                     cls_loss = tr_cls_loss / (step + 1)
                     att_loss = tr_att_loss / (step + 1)
                     rep_loss = tr_rep_loss / (step + 1)
+                    rkd_att_loss = tr_rkd_att_loss / (step+1)
+                    rkd_rep_loss = tr_rkd_rep_loss / (step+1)
                     # vanilla knowledge review
                     # att_loss = tr_att_loss / (step + 1)
                     # rep_loss = tr_rep_loss / (step + 1)
@@ -1442,6 +1489,8 @@ def main():
                     if not args.pred_distill:
                         result['att_loss'] = att_loss
                         result['rep_loss'] = rep_loss
+                        result['rkd_att_loss'] = rkd_att_loss
+                        result['rkd_rep_loss'] = rkd_rep_loss
                         # vanilla knowledge review
                         # result['att_loss'] = att_loss
                         # result['rep_loss'] = rep_loss
@@ -1459,6 +1508,10 @@ def main():
                             task_name), att_loss, global_step)
                         writer.add_scalar('{} rep_loss'.format(
                             task_name), rep_loss, global_step)
+                        writer.add_scalar('{} rkd_att_loss'.format(
+                            task_name), rkd_att_loss, global_step)
+                        writer.add_scalar('{} rkd_rep_loss'.format(
+                            task_name), rkd_rep_loss, global_step)
                         # vanilla knowledge review
                         # writer.add_scalar('{} att_loss'.format(task_name),att_loss,global_step)
                         # writer.add_scalar('{} rep_loss'.format(task_name),rep_loss,global_step)
