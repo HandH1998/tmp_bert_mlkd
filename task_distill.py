@@ -935,7 +935,7 @@ def main():
                         type=int,
                         default=50)
     parser.add_argument('--pred_distill',
-                        # default=True,
+                        default=True,
                         action='store_true')
     parser.add_argument('--data_url',
                         type=str,
@@ -1308,6 +1308,7 @@ def main():
             tr_resual_kr_enhanced_simple_fusion_loss = 0.
             tr_rkd_att_loss=0.
             tr_rkd_rep_loss=0.
+            tr_batch_rkd_rep_loss=0.
 
             student_model.train()
             nb_tr_examples, nb_tr_steps = 0, 0
@@ -1328,6 +1329,7 @@ def main():
                 resual_kr_enhanced_simple_fusion_loss = 0.
                 rkd_att_loss = 0.
                 rkd_rep_loss = 0.
+                batch_rkd_rep_loss = 0.
 
                 is_student = False
                 if not args.pred_distill:
@@ -1415,6 +1417,9 @@ def main():
                     tr_att_loss += att_loss.item()
                     tr_rep_loss += rep_loss.item()
                 else:
+                    student_rep=student_reps[-1][:,0,:]
+                    teacher_rep=teacher_reps[-1][:,0,:]
+                    batch_rkd_rep_loss=rkd_loss(student_rep,teacher_rep)
                     if output_mode == "classification":  # ！ 这里只是使用了soft label，没用ground truth
                         cls_loss = soft_cross_entropy(student_logits / args.temperature,
                                                       teacher_logits / args.temperature)
@@ -1424,8 +1429,9 @@ def main():
                         cls_loss = loss_mse(
                             student_logits.view(-1), teacher_logits.view(-1))
 
-                    loss = cls_loss
+                    loss = cls_loss + batch_rkd_rep_loss
                     tr_cls_loss += cls_loss.item()
+                    tr_batch_rkd_rep_loss +=batch_rkd_rep_loss
 
                 if n_gpu > 1:
                     loss = loss.mean()  # mean() to average on multi-gpu.
@@ -1457,6 +1463,7 @@ def main():
 
                     loss = tr_loss / (step + 1)
                     cls_loss = tr_cls_loss / (step + 1)
+                    batch_rkd_rep_loss = tr_batch_rkd_rep_loss /(step+1)
                     att_loss = tr_att_loss / (step + 1)
                     rep_loss = tr_rep_loss / (step + 1)
                     rkd_att_loss = tr_rkd_att_loss / (step+1)
@@ -1483,8 +1490,11 @@ def main():
                         writer.add_scalar('{} eval_loss'.format(
                             task_name), result['eval_loss'], global_step)
                         result['cls_loss'] = cls_loss
+                        result['batch_rkd_rep_loss']=batch_rkd_rep_loss
                         writer.add_scalar('{} cls_loss'.format(
                             task_name), cls_loss, global_step)
+                        writer.add_scalar('{} batch_rkd_rep_loss'.format(
+                            task_name), batch_rkd_rep_loss, global_step)
 
                     if not args.pred_distill:
                         result['att_loss'] = att_loss
