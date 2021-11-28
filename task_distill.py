@@ -940,7 +940,7 @@ def main():
                         type=int,
                         default=50)
     parser.add_argument('--pred_distill',
-                        default=True,
+                        # default=True,
                         action='store_true')
     parser.add_argument('--data_url',
                         type=str,
@@ -1436,7 +1436,7 @@ def main():
 
                     loss = cls_loss + batch_rkd_rep_loss
                     tr_cls_loss += cls_loss.item()
-                    tr_batch_rkd_rep_loss +=batch_rkd_rep_loss
+                    tr_batch_rkd_rep_loss +=batch_rkd_rep_loss.item()
 
                 if n_gpu > 1:
                     loss = loss.mean()  # mean() to average on multi-gpu.
