@@ -8,23 +8,24 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.mlp_head import MLPHead
-from .memory import ContrastMemory
+# from models.mlp_head import MLPHead
+# from .memory import ContrastMemory
 
 eps=1e-7
 
 class SupConLoss(nn.Module):
     """Supervised Contrastive Learning: https://arxiv.org/pdf/2004.11362.pdf.
     It also supports the unsupervised contrastive loss in SimCLR"""
-    def __init__(self, opt, temperature=0.07, contrast_mode='all',
+    def __init__(self, temperature=0.07, contrast_mode='all',
                  base_temperature=0.07):
         super(SupConLoss, self).__init__()
         self.temperature = temperature
         self.contrast_mode = contrast_mode
         self.base_temperature = base_temperature
+        self.l2norm=Normalize(2)
         #self.embeds = Embed(opt.t_dim, opt.t_dim//2)
-        self.embed_s = Embed(opt.s_dim, opt.feat_dim)
-        self.embed_t = Embed(opt.t_dim, opt.feat_dim)
+        # self.embed_s = Embed(opt.s_dim, opt.feat_dim)
+        # self.embed_t = Embed(opt.t_dim, opt.feat_dim)
         #self.embed_s = Head(opt.s_dim, opt.feat_dim) 
 
     def forward(self, feat_s, feat_t, labels=None, mask=None):
@@ -64,8 +65,12 @@ class SupConLoss(nn.Module):
         else:
             mask = mask.float().to(device)
         
-        embed_s = self.embed_s(feat_s)
-        embed_t = self.embed_t(feat_t)
+        # embed_s = self.embed_s(feat_s)
+        # embed_t = self.embed_t(feat_t)
+        embed_s=self.l2norm(feat_s)
+        embed_t=self.l2norm(feat_t)
+        # embed_s=feat_s
+        # embed_t=feat_t
         anchor_feature = torch.cat([embed_s, embed_t], dim=0)
         anchor_count = 2
 
@@ -76,6 +81,7 @@ class SupConLoss(nn.Module):
         # for numerical stability ? 这里为什么要-max
         logits_max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
         logits = anchor_dot_contrast - logits_max.detach()
+        # logits=anchor_dot_contrast
 
         # tile mask
         mask = mask.repeat(anchor_count, anchor_count)

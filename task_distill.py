@@ -46,6 +46,7 @@ from transformer.optimization import BertAdam
 from transformer.file_utils import WEIGHTS_NAME, CONFIG_NAME
 import torch.nn.functional as F
 import shutil
+from losses import SupConLoss
 
 
 # csv.field_size_limit(sys.maxsize)
@@ -940,7 +941,7 @@ def main():
                         type=int,
                         default=50)
     parser.add_argument('--pred_distill',
-                        # default=True,
+                        default=True,
                         action='store_true')
     parser.add_argument('--data_url',
                         type=str,
@@ -1296,7 +1297,7 @@ def main():
                 loss +=loss_mse(st,te)
             return loss
 
-
+        criterion_super_contr=SupConLoss()
         # Train and evaluate
         global_step = 0
         best_dev_metric = 0.0
@@ -1314,6 +1315,7 @@ def main():
             tr_rkd_att_loss=0.
             tr_rkd_rep_loss=0.
             tr_batch_rkd_rep_loss=0.
+            tr_super_contr_loss=0.
 
             student_model.train()
             nb_tr_examples, nb_tr_steps = 0, 0
@@ -1335,10 +1337,11 @@ def main():
                 rkd_att_loss = 0.
                 rkd_rep_loss = 0.
                 batch_rkd_rep_loss = 0.
+                super_contr_loss=0.
 
-                is_student = False
-                if not args.pred_distill:
-                    is_student = True
+                is_student = True
+                # if not args.pred_distill:
+                #     is_student = True
 
                 student_logits, student_atts, student_reps, student_att_probs = student_model(input_ids, segment_ids, input_mask,
                                                                                               is_student=is_student)
@@ -1422,9 +1425,12 @@ def main():
                     tr_att_loss += att_loss.item()
                     tr_rep_loss += rep_loss.item()
                 else:
+                    # student_rep=student_reps[-1][:,0,:]
+                    # teacher_rep=teacher_reps[-1][:,0,:]
+                    # batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
                     student_rep=student_reps[-1][:,0,:]
                     teacher_rep=teacher_reps[-1][:,0,:]
-                    batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
+                    super_contr_loss=criterion_super_contr(student_rep,teacher_rep,labels=label_ids)
                     if output_mode == "classification":  # ！ 这里只是使用了soft label，没用ground truth
                         cls_loss = soft_cross_entropy(student_logits / args.temperature,
                                                       teacher_logits / args.temperature)
@@ -1434,9 +1440,11 @@ def main():
                         cls_loss = loss_mse(
                             student_logits.view(-1), teacher_logits.view(-1))
 
-                    loss = cls_loss + batch_rkd_rep_loss
+                    # loss = cls_loss + batch_rkd_rep_loss
+                    loss = cls_loss + super_contr_loss
                     tr_cls_loss += cls_loss.item()
-                    tr_batch_rkd_rep_loss +=batch_rkd_rep_loss.item()
+                    # tr_batch_rkd_rep_loss +=batch_rkd_rep_loss.item()
+                    tr_super_contr_loss +=super_contr_loss.item()
 
                 if n_gpu > 1:
                     loss = loss.mean()  # mean() to average on multi-gpu.
@@ -1473,6 +1481,7 @@ def main():
                     rep_loss = tr_rep_loss / (step + 1)
                     rkd_att_loss = tr_rkd_att_loss / (step+1)
                     rkd_rep_loss = tr_rkd_rep_loss / (step+1)
+                    super_contr_loss=tr_super_contr_loss/(step+1)
                     # vanilla knowledge review
                     # att_loss = tr_att_loss / (step + 1)
                     # rep_loss = tr_rep_loss / (step + 1)
@@ -1495,11 +1504,13 @@ def main():
                         writer.add_scalar('{} eval_loss'.format(
                             task_name), result['eval_loss'], global_step)
                         result['cls_loss'] = cls_loss
-                        result['batch_rkd_rep_loss']=batch_rkd_rep_loss
+                        # result['batch_rkd_rep_loss']=batch_rkd_rep_loss
+                        result['super_contr_loss']=super_contr_loss
                         writer.add_scalar('{} cls_loss'.format(
                             task_name), cls_loss, global_step)
-                        writer.add_scalar('{} batch_rkd_rep_loss'.format(
-                            task_name), batch_rkd_rep_loss, global_step)
+                        # writer.add_scalar('{} batch_rkd_rep_loss'.format(
+                        #     task_name), batch_rkd_rep_loss, global_step)
+                        writer.add_scalar('{} super_contr_loss'.format(task_name),super_contr_loss,global_step)
 
                     if not args.pred_distill:
                         result['att_loss'] = att_loss
