@@ -1271,6 +1271,18 @@ def main():
             # res[range(len(e)), range(len(e))] = 0
             res[...,range(e.shape[-2]), range(e.shape[-2])] = 0
             return res
+
+        def rkd_kl_loss(student,teacher):
+            loss=0.
+            for st,te in zip(student,teacher):
+                with torch.no_grad():
+                    t_d=torch.matmul(st,st.transpose(-2,-1))
+                    t_d_log=F.softmax(t_d,dim=-1)
+                s_d=torch.matmul(te,te.transpose(-2,-1))
+                s_d_log=F.log_softmax(s_d,dim=-1)
+                loss +=F.kl_div(s_d_log,t_d_log,reduction='batchmean')
+            return loss
+
         def rkd_loss(student, teacher):
             loss=0.
             for st,te in zip(student,teacher):
@@ -1350,7 +1362,10 @@ def main():
                     student_atts=[torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),student_att) for student_att in student_atts]
                     teacher_atts=[torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),teacher_att) for teacher_att in new_teacher_atts]
                     att_loss=align_loss(student_atts,teacher_atts)
-                    rkd_att_loss=rkd_loss(student_atts,teacher_atts)
+                    # rkd_att_loss=rkd_loss(student_atts,teacher_atts)
+                    new_teacher_att_probs = [teacher_att_probs[i * layers_per_block + layers_per_block - 1]
+                                             for i in range(student_layer_num)]
+                    rkd_att_loss=rkd_loss(student_att_probs,new_teacher_att_probs)
                     # for student_att, teacher_att in zip(student_atts, new_teacher_atts):
                     #     student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
                     #                               student_att)  # 将被mask掉的位置置为0
@@ -1408,7 +1423,8 @@ def main():
                     # att_loss=att_knowledge_review(student_atts,new_teacher_atts)
                     # rep_loss =rep_knowledge_review(new_student_reps,new_teacher_reps)
                     rep_loss=align_loss(new_student_reps,new_teacher_reps)
-                    rkd_rep_loss=rkd_loss(new_student_reps,new_teacher_reps)
+                    rkd_rep_loss=rkd_loss(new_student_reps,new_teacher_reps)*10
+                    # rkd_rep_loss=rkd_kl_loss(new_student_reps,new_teacher_reps)
                     loss = rep_loss + att_loss+rkd_att_loss+rkd_rep_loss
                     tr_rkd_att_loss +=rkd_att_loss.item()
                     tr_rkd_rep_loss +=rkd_rep_loss.item()
