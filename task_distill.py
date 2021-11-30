@@ -1424,7 +1424,7 @@ def main():
                 else:
                     student_rep=student_reps[-1][:,0,:]
                     teacher_rep=teacher_reps[-1][:,0,:]
-                    batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
+                    batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))*10
                     if output_mode == "classification":  # ！ 这里只是使用了soft label，没用ground truth
                         cls_loss = soft_cross_entropy(student_logits / args.temperature,
                                                       teacher_logits / args.temperature)
