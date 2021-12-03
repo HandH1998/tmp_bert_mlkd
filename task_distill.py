@@ -1354,7 +1354,7 @@ def main():
                 resual_kr_simple_fusion_loss = 0.
                 resual_kr_enhanced_simple_fusion_loss = 0.
                 rkd_att_loss = 0.
-                rkd_rep_loss = torch.tensor(0.)
+                rkd_rep_loss = 0.
                 self_out_loss = 0.
 
                 is_student = False
@@ -1445,7 +1445,7 @@ def main():
                     # rep_loss =rep_knowledge_review(new_student_reps,new_teacher_reps)
                     rep_loss=align_loss(new_student_reps,new_teacher_reps)
                     # rkd_rep_loss=rkd_loss(new_student_reps,new_teacher_reps)*10
-                    # rkd_rep_loss=new_rkd_loss(new_student_reps,new_teacher_reps)
+                    rkd_rep_loss=new_rkd_loss(new_student_reps,new_teacher_reps,head_nums=12)
                     # rkd_rep_loss=new_rkd_loss(original_student_reps,new_teacher_reps)
                     # rkd_rep_loss=rkd_kl_loss(new_student_reps,new_teacher_reps)
                     # loss = rep_loss + att_loss+rkd_att_loss+rkd_rep_loss
