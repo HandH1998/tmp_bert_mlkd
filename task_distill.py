@@ -46,7 +46,7 @@ from transformer.optimization import BertAdam
 from transformer.file_utils import WEIGHTS_NAME, CONFIG_NAME
 import torch.nn.functional as F
 import shutil
-
+import math
 
 # csv.field_size_limit(sys.maxsize)
 csv.field_size_limit(1000000000)
@@ -940,7 +940,7 @@ def main():
                         type=int,
                         default=50)
     parser.add_argument('--pred_distill',
-                        # default=True,
+                        default=True,
                         action='store_true')
     parser.add_argument('--data_url',
                         type=str,
@@ -1295,7 +1295,32 @@ def main():
             for st,te in zip(student,teacher):
                 loss +=loss_mse(st,te)
             return loss
-
+        def new_rkd_loss(student,teacher,head_nums=12):
+            loss=0.
+            student_head_size=student[0].shape[-1]//head_nums
+            teacher_head_size=teacher[0].shape[-1]//head_nums
+            student=[st.view(st.shape[0],st.shape[1],head_nums,-1).permute(0,2,1,3) for st in student]
+            teacher=[te.view(te.shape[0],te.shape[1],head_nums,-1).permute(0,2,1,3) for te in teacher]
+            student_relation=[torch.div(torch.matmul(st,st.transpose(-2,-1)),math.sqrt(student_head_size)) for st in student]
+            teacher_relation=[torch.div(torch.matmul(te,te.transpose(-2,-1)),math.sqrt(teacher_head_size)) for te in teacher]
+            for st,te in zip(student_relation,teacher_relation):
+                st_log_probs=F.log_softmax(st,-1).view(-1,student_relation[0].shape[-1])
+                te_probs=F.softmax(te,-1).view(-1,teacher_relation[0].shape[-1])
+                loss +=F.kl_div(st_log_probs,te_probs,reduction='batchmean')
+            return loss
+        def new_rkd_batch_loss(student,teacher,head_nums=12):
+            loss=0.
+            student_head_size=student[0].shape[-1]//head_nums
+            teacher_head_size=teacher[0].shape[-1]//head_nums
+            student=[st.view(st.shape[0],head_nums,-1).permute(1,0,2) for st in student]
+            teacher=[te.view(te.shape[0],head_nums,-1).permute(1,0,2) for te in teacher]
+            student_relation=[torch.div(torch.matmul(st,st.transpose(-2,-1)),math.sqrt(student_head_size)) for st in student]
+            teacher_relation=[torch.div(torch.matmul(te,te.transpose(-2,-1)),math.sqrt(teacher_head_size)) for te in teacher]
+            for st,te in zip(student_relation,teacher_relation):
+                st_log_probs=F.log_softmax(st,-1).view(-1,student_relation[0].shape[-1])
+                te_probs=F.softmax(te,-1).view(-1,teacher_relation[0].shape[-1])
+                loss +=F.kl_div(st_log_probs,te_probs,reduction='batchmean')
+            return loss
 
         # Train and evaluate
         global_step = 0
@@ -1336,9 +1361,9 @@ def main():
                 rkd_rep_loss = 0.
                 batch_rkd_rep_loss = 0.
 
-                is_student = False
-                if not args.pred_distill:
-                    is_student = True
+                is_student = True
+                # if not args.pred_distill:
+                #     is_student = True
 
                 student_logits, student_atts, student_reps, student_att_probs = student_model(input_ids, segment_ids, input_mask,
                                                                                               is_student=is_student)
@@ -1424,7 +1449,8 @@ def main():
                 else:
                     student_rep=student_reps[-1][:,0,:]
                     teacher_rep=teacher_reps[-1][:,0,:]
-                    batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))*10
+                    # batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))*10
+                    batch_rkd_rep_loss=new_rkd_batch_loss((student_rep,),(teacher_rep,),head_nums=1)
                     if output_mode == "classification":  # ！ 这里只是使用了soft label，没用ground truth
                         cls_loss = soft_cross_entropy(student_logits / args.temperature,
                                                       teacher_logits / args.temperature)
