@@ -716,7 +716,7 @@ def do_eval(model, task_name, eval_dataloader,
         with torch.no_grad():
             input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch_
 
-            logits, _, _, _,_ = model(input_ids, segment_ids, input_mask)
+            logits, _, _, _,_= model(input_ids, segment_ids, input_mask)
 
         # create eval loss and other metric required by the task
         if output_mode == "classification":
@@ -759,7 +759,7 @@ def do_predict(model, eval_dataloader, task_name,
         with torch.no_grad():
             input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch_
 
-            logits, _, _, _,_ = model(input_ids, segment_ids, input_mask)
+            logits, _, _, _,_= model(input_ids, segment_ids, input_mask)
 
         # create eval loss and other metric required by the task
         # if output_mode == "classification":
@@ -1357,11 +1357,11 @@ def main():
                 rkd_rep_loss = 0.
                 self_out_loss = 0.
 
-                is_student = False
-                if not args.pred_distill:
-                    is_student = True
+                is_student = True
+                # if not args.pred_distill:
+                #     is_student = True
 
-                student_logits, student_atts, student_reps, student_att_probs,student_all_self_outs = student_model(input_ids, segment_ids, input_mask,
+                student_logits, student_atts, student_reps, student_att_probs,student_all_self_outs,original_student_reps = student_model(input_ids, segment_ids, input_mask,
                                                                                               is_student=is_student)
                 with torch.no_grad():
                     teacher_logits, teacher_atts, teacher_reps, teacher_att_probs,teacher_all_self_outs = teacher_model(
@@ -1445,7 +1445,7 @@ def main():
                     # rep_loss =rep_knowledge_review(new_student_reps,new_teacher_reps)
                     rep_loss=align_loss(new_student_reps,new_teacher_reps)
                     # rkd_rep_loss=rkd_loss(new_student_reps,new_teacher_reps)*10
-                    rkd_rep_loss=new_rkd_loss(new_student_reps,new_teacher_reps,head_nums=12)
+                    rkd_rep_loss=new_rkd_loss(original_student_reps,new_teacher_reps,head_nums=1)
                     # rkd_rep_loss=new_rkd_loss(original_student_reps,new_teacher_reps)
                     # rkd_rep_loss=rkd_kl_loss(new_student_reps,new_teacher_reps)
                     # loss = rep_loss + att_loss+rkd_att_loss+rkd_rep_loss
