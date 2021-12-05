@@ -1361,7 +1361,7 @@ def main():
                 rkd_rep_loss = 0.
                 batch_rkd_rep_loss = 0.
 
-                is_student = True
+                is_student = False
                 # if not args.pred_distill:
                 #     is_student = True
 
