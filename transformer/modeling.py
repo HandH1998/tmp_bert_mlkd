@@ -1168,11 +1168,11 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
                 tmp.append(fit_dense(sequence_layer))
             # for s_id, sequence_layer in enumerate(sequence_output):
             #     tmp.append(self.fit_dense(sequence_layer))
-            sequence_output = tmp
+            # sequence_output = tmp
             # student_fusion_reps_list=self.cal_fusion_reps(att_probs,sequence_output[1:])
             # sequence_output=self.repReviewKD(sequence_output)
             # att_output=self.attReviewKd(att_output)
-            # return logits, att_output, sequence_output, att_probs,student_fusion_reps_list
+            return logits, att_output, tmp, att_probs,sequence_output
         return logits, att_output, sequence_output, att_probs
 
     # def cal_fusion_reps(self,att_probs_list, hidden_states_list):
