@@ -1375,7 +1375,7 @@ def main():
                         teacher_layer_num / student_layer_num)
                     new_teacher_self_outs= [teacher_all_self_outs[i * layers_per_block + layers_per_block - 1]
                                         for i in range(student_layer_num)]
-                    self_out_loss=new_rkd_loss(student_all_self_outs,new_teacher_self_outs)
+                    self_out_loss=new_rkd_loss(student_all_self_outs,new_teacher_self_outs,head_nums=24)
                     # new_teacher_atts = [teacher_atts[i * layers_per_block + layers_per_block - 1]
                     #                     for i in range(student_layer_num)]
                     # student_atts=[torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),student_att) for student_att in student_atts]
