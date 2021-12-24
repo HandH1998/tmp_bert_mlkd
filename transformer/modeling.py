@@ -360,8 +360,9 @@ class BertEmbeddings(nn.Module):
 
         embeddings = words_embeddings + position_embeddings + token_type_embeddings
         embeddings = self.LayerNorm(embeddings)
+        words_embeddings_=self.LayerNorm(words_embeddings)
         embeddings = self.dropout(embeddings)
-        return embeddings
+        return embeddings,words_embeddings_
 
 
 class BertSelfAttention(nn.Module):
@@ -854,7 +855,7 @@ class BertModel(BertPreTrainedModel):
             dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
 
-        embedding_output = self.embeddings(input_ids, token_type_ids)
+        embedding_output,words_embeddings = self.embeddings(input_ids, token_type_ids)
         encoded_layers, layer_atts, layer_att_probs,all_self_out = self.encoder(embedding_output,
                                                   extended_attention_mask)
 
@@ -865,7 +866,7 @@ class BertModel(BertPreTrainedModel):
         if not output_att:
             return encoded_layers, pooled_output
 
-        return encoded_layers, layer_atts, pooled_output, layer_att_probs,all_self_out
+        return encoded_layers, layer_atts, pooled_output, layer_att_probs,all_self_out,words_embeddings
 
 
 class BertForPreTraining(BertPreTrainedModel):
@@ -1158,7 +1159,7 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
     def forward(self, input_ids, token_type_ids=None, attention_mask=None,
                 labels=None, is_student=False):
 
-        sequence_output, att_output, pooled_output, att_probs,all_self_out = self.bert(input_ids, token_type_ids, attention_mask,
+        sequence_output, att_output, pooled_output, att_probs,all_self_out,words_embeddings = self.bert(input_ids, token_type_ids, attention_mask,
                                                                output_all_encoded_layers=True, output_att=True)
 
         logits = self.classifier(torch.relu(pooled_output))
@@ -1174,9 +1175,9 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
             # sequence_output=self.repReviewKD(sequence_output)
             # att_output=self.attReviewKd(att_output)
             # return logits, att_output, sequence_output, att_probs,student_fusion_reps_list
-            return logits, att_output, tmp, att_probs,all_self_out,sequence_output
+            return logits, att_output, tmp, att_probs,all_self_out,sequence_output,words_embeddings
         # return logits, att_output, sequence_output, att_probs,all_self_out
-        return logits, att_output, sequence_output, att_probs,all_self_out
+        return logits, att_output, sequence_output, att_probs,all_self_out,words_embeddings
 
     # def cal_fusion_reps(self,att_probs_list, hidden_states_list):
     #         fusion_reps_list = []

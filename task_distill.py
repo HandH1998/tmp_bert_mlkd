@@ -716,7 +716,7 @@ def do_eval(model, task_name, eval_dataloader,
         with torch.no_grad():
             input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch_
 
-            logits, _, _, _, _ = model(input_ids, segment_ids, input_mask)
+            logits, _, _, _, _, _ = model(input_ids, segment_ids, input_mask)
 
         # create eval loss and other metric required by the task
         if output_mode == "classification":
@@ -759,7 +759,7 @@ def do_predict(model, eval_dataloader, task_name,
         with torch.no_grad():
             input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch_
 
-            logits, _, _, _, _ = model(input_ids, segment_ids, input_mask)
+            logits, _, _, _, _, _ = model(input_ids, segment_ids, input_mask)
 
         # create eval loss and other metric required by the task
         # if output_mode == "classification":
@@ -937,7 +937,7 @@ def main():
                         type=int,
                         default=50)
     parser.add_argument('--pred_distill',
-                        # default=True,
+                        default=True,
                         action='store_true')
     parser.add_argument('--data_url',
                         type=str,
@@ -1102,10 +1102,10 @@ def main():
         if not os.path.exists(tensorboard_log_save_dir):
             os.makedirs(tensorboard_log_save_dir)
         writer = SummaryWriter(log_dir=tensorboard_log_save_dir, flush_secs=30)
-        inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size,
-                                                        args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
+        # inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size,
+        #                                                 args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
         # writer.add_graph(teacher_model, inputs, use_strict_trace=False)
-        writer.add_graph(student_model, inputs)
+        # writer.add_graph(student_model, inputs)
 
     if args.do_eval:
         logger.info("***** Running evaluation *****")
@@ -1373,10 +1373,10 @@ def main():
                 # if not args.pred_distill:
                 #     is_student = True
 
-                student_logits, student_atts, student_reps, student_att_probs, student_all_self_outs, original_student_reps = student_model(input_ids, segment_ids, input_mask,
+                student_logits, student_atts, student_reps, student_att_probs, student_all_self_outs, original_student_reps,student_words_embeddings = student_model(input_ids, segment_ids, input_mask,
                                                                                                                                             is_student=is_student)
                 with torch.no_grad():
-                    teacher_logits, teacher_atts, teacher_reps, teacher_att_probs, teacher_all_self_outs = teacher_model(
+                    teacher_logits, teacher_atts, teacher_reps, teacher_att_probs, teacher_all_self_outs,teacher_words_embeddings = teacher_model(
                         input_ids, segment_ids, input_mask)
 
                 if not args.pred_distill:
@@ -1458,10 +1458,11 @@ def main():
 
                     # rkd_rep_loss=rkd_loss(new_student_reps,new_teacher_reps)*10
                     # rkd_rep_loss=new_rkd_loss(new_student_reps,new_teacher_reps,head_nums=12)
-                    student_emb_rep = new_student_reps[0]
-                    teacher_emb_rep = new_teacher_reps[0]
+                    # student_emb_rep = original_student_reps[0]
+                    # teacher_emb_rep = new_teacher_reps[0]
+                    # temp=new_rkd_loss((student_emb_rep,),(teacher_emb_rep,),head_nums=1)
                     rkd_emb_loss = new_rkd_loss(
-                        (student_emb_rep,), (teacher_emb_rep,), head_nums=1)
+                        (student_words_embeddings,), (teacher_words_embeddings,), head_nums=1)
                     # new_student_reps=[student_rep[:,0,:] for student_rep in new_student_reps]
                     # new_teacher_reps=[teacher_rep[:,0,:] for teacher_rep in new_teacher_reps]
                     # rkd_rep_loss=new_rkd_loss(original_student_reps,new_teacher_reps)
