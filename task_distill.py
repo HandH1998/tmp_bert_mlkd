@@ -937,7 +937,7 @@ def main():
                         type=int,
                         default=50)
     parser.add_argument('--pred_distill',
-                        default=True,
+                        # default=True,
                         action='store_true')
     parser.add_argument('--data_url',
                         type=str,
