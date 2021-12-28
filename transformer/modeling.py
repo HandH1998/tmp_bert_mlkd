@@ -409,6 +409,11 @@ class BertSelfAttention(nn.Module):
         # Normalize the attention scores to probabilities.
         attention_probs = nn.Softmax(dim=-1)(attention_scores)
 
+        context_layer_ = torch.matmul(attention_probs, value_layer)
+        context_layer_ = context_layer_.permute(0, 2, 1, 3).contiguous()
+        new_context_layer_shape = context_layer_.size()[
+            :-2] + (self.all_head_size,)
+        context_layer_ = context_layer_.view(*new_context_layer_shape)
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
         attention_probs = self.dropout(attention_probs)
@@ -418,7 +423,7 @@ class BertSelfAttention(nn.Module):
         new_context_layer_shape = context_layer.size()[
             :-2] + (self.all_head_size,)
         context_layer = context_layer.view(*new_context_layer_shape)
-        return context_layer, attention_scores, attention_probs
+        return context_layer, attention_scores, attention_probs,context_layer_
 
 
 class BertAttention(nn.Module):
@@ -429,9 +434,9 @@ class BertAttention(nn.Module):
         self.output = BertSelfOutput(config)
 
     def forward(self, input_tensor, attention_mask):
-        self_output, layer_att, layer_att_probs = self.self(input_tensor, attention_mask)
+        self_output, layer_att, layer_att_probs,self_output_ = self.self(input_tensor, attention_mask)
         attention_output = self.output(self_output, input_tensor)
-        return attention_output, layer_att, layer_att_probs,self_output
+        return attention_output, layer_att, layer_att_probs,self_output_ #here
 
 
 class BertSelfOutput(nn.Module):
