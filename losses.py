@@ -74,8 +74,11 @@ class SupConLoss(nn.Module):
         anchor_feature = torch.cat([embed_s, embed_t], dim=0)
         anchor_count = 2
 
+        # anchor_dot_contrast = torch.div(
+        #     torch.matmul(anchor_feature, torch.transpose(anchor_feature,0,1)),
+        #     self.temperature)
         anchor_dot_contrast = torch.div(
-            torch.matmul(anchor_feature, torch.transpose(anchor_feature,0,1)),
+            torch.matmul(embed_s, torch.transpose(anchor_feature,0,1)),
             self.temperature)
 
         # for numerical stability ? 这里为什么要-max
@@ -84,12 +87,19 @@ class SupConLoss(nn.Module):
         # logits=anchor_dot_contrast
 
         # tile mask
-        mask = mask.repeat(anchor_count, anchor_count)
+        # mask = mask.repeat(anchor_count, anchor_count)
+        mask = mask.repeat(1, anchor_count)
         # mask-out self-contrast cases
+        # logits_mask = torch.scatter(
+        #     torch.ones_like(mask),
+        #     1,
+        #     torch.arange(batch_size * anchor_count).view(-1, 1).to(device),
+        #     0
+        # )
         logits_mask = torch.scatter(
             torch.ones_like(mask),
             1,
-            torch.arange(batch_size * anchor_count).view(-1, 1).to(device),
+            torch.arange(batch_size * 1).view(-1, 1).to(device),
             0
         )
         mask = mask * logits_mask
@@ -102,7 +112,8 @@ class SupConLoss(nn.Module):
 
         # loss
         loss = - (self.temperature / self.base_temperature) * mean_log_prob_pos
-        loss = loss.view(anchor_count, batch_size).mean()
+        # loss = loss.view(anchor_count, batch_size).mean()
+        loss = loss.view(1, batch_size).mean()
         return loss
 
 
