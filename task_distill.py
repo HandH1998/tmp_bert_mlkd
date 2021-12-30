@@ -28,13 +28,14 @@ import os
 import random
 import sys
 from datetime import datetime
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 
 import numpy as np
 import torch
 from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
                               TensorDataset)
 from tqdm import tqdm, trange
+import matplotlib.pyplot as plt
 
 from torch.nn import CrossEntropyLoss, MSELoss
 from scipy.stats import pearsonr, spearmanr
@@ -837,61 +838,30 @@ def do_predict(model, eval_dataloader, task_name,
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir",
-                        default="data/glue_data/MRPC",
+                        default="data/glue_data/QNLI",
                         type=str,
                         required=False,
                         help="The input data dir. Should contain the .tsv files (or other data files) for the task.")
     parser.add_argument("--teacher_model",
-                        default="model/fine-tuned_pretrained_model/mrpc/on_original_data",
+                        default="model/fine-tuned_pretrained_model/qnli/on_original_data",
                         type=str,
                         help="The teacher model dir.")
-    # parser.add_argument("--student_model",
-    #                     default="model/distilled_pretrained_model/2nd_General_TinyBERT_4L_312D",
-    #                     type=str,
-    #                     required=False,
-    #                     help="The student model dir.")
     parser.add_argument("--student_model",
-                        default="model/distilled_fine-tuned_model/mrpc/on_original_data",
+                        default="model/distilled_fine-tuned_model/qnli/on_original_data",
                         type=str,
                         required=False,
                         help="The student model dir.")
     parser.add_argument("--task_name",
-                        default="mrpc",
+                        default="qnli",
                         type=str,
                         required=False,
                         help="The name of the task to train.")
-    parser.add_argument("--output_dir",
-                        default="model/knowledge_review/distilled_intermediate_model/tmp",
-                        type=str,
-                        required=False,
-                        help="The output directory where the model predictions and checkpoints will be written.")
-    parser.add_argument("--tensorboard_log_save_dir",
-                        default="tensorboard_log/tmp",
-                        type=str,
-                        required=False,
-                        help="The output directory where the tensorboard logs will be written.")
-    parser.add_argument("--write_predict_dir",
-                        default="model/knowledge_review/distilled_intermediate_model/tmp",
-                        type=str,
-                        help="The output directory where the model predictions on the test set")
-    parser.add_argument("--cache_dir",
-                        default="",
-                        type=str,
-                        help="Where do you want to store the pre-trained models downloaded from s3")
     parser.add_argument("--max_seq_length",
                         default=128,
                         type=int,
                         help="The maximum total input sequence length after WordPiece tokenization. \n"
                              "Sequences longer than this will be truncated, and sequences shorter \n"
                              "than this will be padded.")
-    parser.add_argument("--do_eval",
-                        # default=True,
-                        action='store_true',
-                        help="Whether to run eval on the dev set.")
-    parser.add_argument("--do_predict",
-                        # default=True,
-                        action='store_true',
-                        help="Whether to run predict on the test set")
     parser.add_argument("--do_lower_case",
                         default=True,
                         action='store_true',
@@ -901,18 +871,9 @@ def main():
                         type=int,
                         help="Total batch size for training.")
     parser.add_argument("--eval_batch_size",
-                        default=32,
+                        default=128,
                         type=int,
                         help="Total batch size for eval.")
-    parser.add_argument("--learning_rate",
-                        default=5e-5,
-                        type=float,
-                        help="The initial learning rate for Adam.")
-    parser.add_argument('--weight_decay', '--wd',
-                        default=1e-4,
-                        type=float,
-                        metavar='W',
-                        help='weight decay')
     parser.add_argument("--num_train_epochs",
                         default=3.0,
                         type=float,
@@ -929,26 +890,6 @@ def main():
                         type=int,
                         default=42,
                         help="random seed for initialization")
-    parser.add_argument('--gradient_accumulation_steps',
-                        type=int,
-                        default=1,
-                        help="Number of updates steps to accumulate before performing a backward/update pass.")
-
-    # added arguments
-    parser.add_argument('--aug_train',
-                        action='store_true')
-    parser.add_argument('--eval_step',
-                        type=int,
-                        default=50)
-    parser.add_argument('--pred_distill',
-                        default=True,
-                        action='store_true')
-    parser.add_argument('--data_url',
-                        type=str,
-                        default="")
-    parser.add_argument('--temperature',
-                        type=float,
-                        default=1.)
 
     args = parser.parse_args()
     # logger.info('The args: {}'.format(args))
@@ -1017,14 +958,6 @@ def main():
     torch.manual_seed(args.seed)
     if n_gpu > 0:
         torch.cuda.manual_seed_all(args.seed)
-    # Prepare task settings
-    if os.path.exists(args.output_dir) and os.listdir(args.output_dir):
-        # raise ValueError("Output directory ({}) already exists and is not empty.".format(args.output_dir))
-        logger.info("Output directory ({}) already exists and is not empty.".format(
-            args.output_dir))
-        shutil.rmtree(args.output_dir)
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
 
     task_name = args.task_name.lower()
 
@@ -1032,12 +965,6 @@ def main():
         args.max_seq_len = default_params[task_name]["max_seq_length"]
         args.eval_step = default_params[task_name]["eval_step"]
 
-    if not args.pred_distill and not args.do_eval:
-        if task_name in default_params:
-            args.num_train_epochs = default_params[task_name]["num_train_epochs"]
-    if args.pred_distill:
-        if task_name in default_params:
-            args.num_train_epochs = default_params[task_name]["num_train_epochs_distill_prediction"]
     logger.info('The args: {}'.format(args))
 
     if task_name not in processors:
@@ -1051,657 +978,40 @@ def main():
     tokenizer = BertTokenizer.from_pretrained(
         args.student_model, do_lower_case=args.do_lower_case)
 
-    if not args.do_eval and not args.do_predict:
-        if not args.aug_train:
-            train_examples = processor.get_train_examples(args.data_dir)
-        else:
-            train_examples = processor.get_aug_examples(args.data_dir)
-        if args.gradient_accumulation_steps < 1:
-            raise ValueError("Invalid gradient_accumulation_steps parameter: {}, should be >= 1".format(
-                args.gradient_accumulation_steps))
-
-        args.train_batch_size = args.train_batch_size // args.gradient_accumulation_steps
-
-        num_train_optimization_steps = int(
-            len(train_examples) / args.train_batch_size / args.gradient_accumulation_steps) * args.num_train_epochs
-
-        train_features = convert_examples_to_features(train_examples, label_list,
-                                                      args.max_seq_length, tokenizer, output_mode)
-        train_data, _ = get_tensor_data(output_mode, train_features)
-        train_sampler = RandomSampler(train_data)
-        train_dataloader = DataLoader(
-            train_data, sampler=train_sampler, batch_size=args.train_batch_size)
-    if not args.do_predict:
-        eval_examples = processor.get_dev_examples(args.data_dir)
-        eval_features = convert_examples_to_features(
-            eval_examples, label_list, args.max_seq_length, tokenizer, output_mode)
-        eval_data, eval_labels = get_tensor_data(output_mode, eval_features)
-        eval_sampler = SequentialSampler(eval_data)
-        eval_dataloader = DataLoader(
-            eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
-    if args.do_predict:
-        test_examples = processor.get_test_examples(args.data_dir)
-        test_features = convert_examples_to_features(
-            test_examples, label_list, args.max_seq_length, tokenizer, output_mode)
-        test_data, test_labels = get_tensor_data(output_mode, test_features)
-        test_sampler = SequentialSampler(test_data)
-        test_dataloader = DataLoader(
-            test_data, sampler=test_sampler, batch_size=args.eval_batch_size)
-
-    if not args.do_eval and not args.do_predict:
-        teacher_model = TinyBertForSequenceClassification.from_pretrained(
-            args.teacher_model, num_labels=num_labels, is_student=False)
-        teacher_model.to(device)
-
-    student_model = TinyBertForSequenceClassification.from_pretrained(
-        args.student_model, num_labels=num_labels, is_student=True)
-    student_model.to(device)
-
-    if not args.do_eval and not args.do_predict:
-        tensorboard_log_save_dir = args.tensorboard_log_save_dir
-        if os.path.exists(tensorboard_log_save_dir):
-            logger.info("Tensorboard log directory ({}) already exists and is not empty.".format(
-                args.output_dir))
-            shutil.rmtree(tensorboard_log_save_dir)
-        if not os.path.exists(tensorboard_log_save_dir):
-            os.makedirs(tensorboard_log_save_dir)
-        writer = SummaryWriter(log_dir=tensorboard_log_save_dir, flush_secs=30)
-        inputs = tuple([torch.from_numpy(np.random.rand(args.train_batch_size,
-                                                        args.max_seq_length)).type(torch.int64).to(device) for _ in range(3)])
-        # writer.add_graph(teacher_model, inputs, use_strict_trace=False)
-        writer.add_graph(student_model, inputs)
-
-    if args.do_eval:
-        logger.info("***** Running evaluation *****")
-        logger.info("  Num examples = %d", len(eval_examples))
-        logger.info("  Batch size = %d", args.eval_batch_size)
-
-        student_model.eval()
-        result = do_eval(student_model, task_name, eval_dataloader,
-                         device, output_mode, eval_labels, num_labels)
-        logger.info("***** Eval results *****")
-        for key in sorted(result.keys()):
-            logger.info("  %s = %s", key, str(result[key]))
-    elif args.do_predict:
-        logger.info("***** Running prediction *****")
-        logger.info("  Num examples = %d", len(test_examples))
-        logger.info("  Batch size = %d", args.eval_batch_size)
-
-        student_model.eval()
-        do_predict(student_model, test_dataloader, task_name,
-                   device, output_mode, processor, args.write_predict_dir)
-        if task_name == "mnli":
-            task_name = "mnli-mm"
-            processor = processors[task_name]()
-            test_examples = processor.get_test_examples(args.data_dir)
-            test_features = convert_examples_to_features(
-                test_examples, label_list, args.max_seq_length, tokenizer, output_mode)
-            test_data, test_labels = get_tensor_data(
-                output_mode, test_features)
-
-            logger.info("***** Running mm prediction *****")
-            logger.info("  Num examples = %d",
-                        len(test_examples))
-            logger.info("  Batch size = %d",
-                        args.eval_batch_size)
-            test_sampler = SequentialSampler(test_data)
-            test_dataloader = DataLoader(
-                test_data, sampler=test_sampler, batch_size=args.eval_batch_size)
-            do_predict(student_model, test_dataloader, task_name,
-                       device, output_mode, processor, args.write_predict_dir)
-    else:
-        logger.info("***** Running training *****")
-        logger.info("  Num examples = %d", len(train_examples))
-        logger.info("  Batch size = %d", args.train_batch_size)
-        logger.info("  Num steps = %d", num_train_optimization_steps)
-        if n_gpu > 1:
-            student_model = torch.nn.DataParallel(student_model)
-            teacher_model = torch.nn.DataParallel(teacher_model)
-        # Prepare optimizer
-        param_optimizer = list(student_model.named_parameters())
-        size = 0
-        for n, p in student_model.named_parameters():
-            logger.info('n: {}'.format(n))
-            size += p.nelement()
-
-        logger.info('Total parameters: {}'.format(size))
-        no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
-        optimizer_grouped_parameters = [
-            {'params': [p for n, p in param_optimizer if not any(
-                nd in n for nd in no_decay)], 'weight_decay': 0.01},
-            {'params': [p for n, p in param_optimizer if any(
-                nd in n for nd in no_decay)], 'weight_decay': 0.0}
-        ]
-        schedule = 'warmup_linear'
-        if not args.pred_distill:
-            schedule = 'none'
-        optimizer = BertAdam(optimizer_grouped_parameters,
-                             schedule=schedule,
-                             lr=args.learning_rate,
-                             warmup=args.warmup_proportion,
-                             t_total=num_train_optimization_steps)
-        # Prepare loss functions
-        loss_mse = MSELoss()
-
-        def soft_cross_entropy(predicts, targets):
-            student_likelihood = torch.nn.functional.log_softmax(
-                predicts, dim=-1)
-            targets_prob = torch.nn.functional.softmax(targets, dim=-1)
-            return (- targets_prob * student_likelihood).mean()
-
-        def embedding_loss(student_embedding, teacher_embedding):
-            return loss_mse(student_embedding, teacher_embedding)
-
-        def cal_fusion_reps(att_probs_list, hidden_states_list):
-            fusion_reps_list = []
-            for att_probs, hidden_states in zip(att_probs_list, hidden_states_list):
-                fusion_reps_list.append(torch.matmul(
-                    att_probs, hidden_states.unsqueeze(1)))
-            return fusion_reps_list
-
-        def resual_kr_enhanced_simple_fusion(student_fusion_reps_list, teacher_fusion_reps_list):
-            total_resual_kr_enhanced_simple_fusion = 0.
-            for student_fusion_rep, teacher_fusion_rep in zip(student_fusion_reps_list, teacher_fusion_reps_list):
-                total_resual_kr_enhanced_simple_fusion += loss_mse(
-                    student_fusion_rep, teacher_fusion_rep)
-            return total_resual_kr_enhanced_simple_fusion
-
-        def resual_kr_simple_fusion(student_fusion_reps_list, teacher_fusion_reps_list):
-            alpha = 0.6
-            total_resual_kr_simple_fusion_loss = 0.
-            student_fusion_rep = student_fusion_reps_list[-1]
-            for i in range(len(teacher_fusion_reps_list)-1, -1, -1):
-                student_fusion_rep = alpha * \
-                    student_fusion_reps_list[i]+(1-alpha)*student_fusion_rep
-                total_resual_kr_simple_fusion_loss += loss_mse(
-                    student_fusion_rep, teacher_fusion_reps_list[i])
-            return total_resual_kr_simple_fusion_loss
-
-        def rep_knowledge_review(student_reps_list, teacher_reps_list):
-            total_rep_loss = 0.
-            for i in range(len(teacher_reps_list)):
-                for j in range(i, len(student_reps_list)):
-                    total_rep_loss += loss_mse(
-                        student_reps_list[j], teacher_reps_list[i])
-            return total_rep_loss
-
-        def att_knowledge_review(student_att_list, teacher_att_list):
-            student_att_list = [torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(
-                device), student_att) for student_att in student_att_list]  # 将被mask掉的位置置为0
-            teacher_att_list = [torch.where(teacher_att <= -1e2, torch.zeros_like(
-                teacher_att).to(device), teacher_att) for teacher_att in teacher_att_list]
-            total_att_loss = 0.
-            for i in range(len(teacher_att_list)):
-                for j in range(i, len(student_att_list)):
-                    total_att_loss += loss_mse(
-                        student_att_list[j], teacher_att_list[i])
-            return total_att_loss
-
-        def hcl(fstudent, fteacher):
-            loss_all = 0.0
-            for fs, ft in zip(fstudent, fteacher):
-                try:
-                    n, c, h, w = fs.shape
-                except:
-                    fs = torch.unsqueeze(fs, 1)
-                    ft = torch.unsqueeze(ft, 1)
-                    n, c, h, w = fs.shape
-                loss = F.mse_loss(fs, ft, reduction='mean')
-                cnt = 1.0
-                tot = 1.0
-                for l in [2, 3, 4]:
-                    # if l >= h:
-                    #     continue
-                    tmpfs = F.avg_pool2d(fs, (l, 1), stride=1)
-                    tmpft = F.avg_pool2d(ft, (l, 1), stride=1)
-                    # tmpfs = F.adaptive_avg_pool2d(fs, (l, hidden_size))
-                    # tmpft = F.adaptive_avg_pool2d(ft, (l, hidden_size))
-                    cnt /= 2.0
-                    loss += F.mse_loss(tmpfs, tmpft, reduction='mean') * cnt
-                    tot += cnt
-                loss = loss / tot
-                loss_all = loss_all + loss
-            return loss_all
-        def pdist(e, squared=False, eps=1e-12):
-            e_square= e.pow(2).sum(dim=-1)
-            # e_square = e.pow(2).sum(dim=1)
-            # prod = e @ e.t()
-            prod = torch.matmul(e,e.transpose(-2,-1))
-            # res = (e_square.unsqueeze(1) + e_square.unsqueeze(0) - 2 * prod).clamp(min=eps)
-            res = (e_square.unsqueeze(-1) + e_square.unsqueeze(-2) - 2 * prod).clamp(min=eps)
-
-            if not squared:
-                res = res.sqrt()
-
-            res = res.clone()
-            # res[range(len(e)), range(len(e))] = 0
-            res[...,range(e.shape[-2]), range(e.shape[-2])] = 0
-            return res
-        def rkd_loss(student, teacher):
-            loss=0.
-            for st,te in zip(student,teacher):
-                with torch.no_grad():
-                    t_d = pdist(te, squared=False)
-                    mean_td = t_d[t_d>0].mean()
-                    t_d = t_d / mean_td
-
-                d = pdist(st, squared=False)
-                mean_d = d[d>0].mean()
-                d = d / mean_d
-
-                loss += F.smooth_l1_loss(d, t_d, reduction='mean')
-            return loss
-        def align_loss(student,teacher):
-            loss=0.
-            for st,te in zip(student,teacher):
-                loss +=loss_mse(st,te)
-            return loss
-        def new_rkd_loss(student,teacher,head_nums=12):
-            loss=0.
-            student_head_size=student[0].shape[-1]//head_nums
-            teacher_head_size=teacher[0].shape[-1]//head_nums
-            student=[st.view(st.shape[0],st.shape[1],head_nums,-1).permute(0,2,1,3) for st in student]
-            teacher=[te.view(te.shape[0],te.shape[1],head_nums,-1).permute(0,2,1,3) for te in teacher]
-            student_relation=[torch.div(torch.matmul(st,st.transpose(-2,-1)),math.sqrt(student_head_size)) for st in student]
-            teacher_relation=[torch.div(torch.matmul(te,te.transpose(-2,-1)),math.sqrt(teacher_head_size)) for te in teacher]
-            for st,te in zip(student_relation,teacher_relation):
-                st_log_probs=F.log_softmax(st,-1).view(-1,student_relation[0].shape[-1])
-                te_probs=F.softmax(te,-1).view(-1,teacher_relation[0].shape[-1])
-                loss +=F.kl_div(st_log_probs,te_probs,reduction='batchmean')
-            return loss
-        def new_rkd_batch_loss(student,teacher,head_nums=12):
-            loss=0.
-            student_head_size=student[0].shape[-1]//head_nums
-            teacher_head_size=teacher[0].shape[-1]//head_nums
-            student=[st.view(st.shape[0],head_nums,-1).permute(1,0,2) for st in student]
-            teacher=[te.view(te.shape[0],head_nums,-1).permute(1,0,2) for te in teacher]
-            student_relation=[torch.div(torch.matmul(st,st.transpose(-2,-1)),math.sqrt(student_head_size)) for st in student]
-            teacher_relation=[torch.div(torch.matmul(te,te.transpose(-2,-1)),math.sqrt(teacher_head_size)) for te in teacher]
-            for st,te in zip(student_relation,teacher_relation):
-                st_log_probs=F.log_softmax(st,-1).view(-1,student_relation[0].shape[-1])
-                te_probs=F.softmax(te,-1).view(-1,teacher_relation[0].shape[-1])
-                loss +=F.kl_div(st_log_probs,te_probs,reduction='batchmean')
-            return loss
-        criterion_super_contr=SupConLoss()
-        # Train and evaluate
-        global_step = 0
-        best_dev_metric = 0.0
-        output_eval_file = os.path.join(args.output_dir, "eval_results.txt")
-
-        for epoch_ in trange(int(args.num_train_epochs), desc="Epoch"):
-            tr_loss = 0.
-            tr_att_loss = 0.
-            tr_rep_loss = 0.
-            tr_cls_loss = 0.
-            tr_emb_loss = 0.
-            tr_fusion_rep_loss = 0.
-            tr_resual_kr_simple_fusion_loss = 0.
-            tr_resual_kr_enhanced_simple_fusion_loss = 0.
-            tr_rkd_att_loss=0.
-            tr_rkd_rep_loss=0.
-            tr_batch_rkd_rep_loss=0.
-            tr_super_contr_loss=0.
-
-            student_model.train()
-            nb_tr_examples, nb_tr_steps = 0, 0
-
-            for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration", ascii=True)):
-                batch = tuple(t.to(device) for t in batch)
-
-                input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch
-                if input_ids.size()[0] != args.train_batch_size:
-                    continue
-
-                att_loss = 0.
-                rep_loss = 0.
-                cls_loss = 0.
-                emb_loss = 0.
-                fusion_rep_loss = 0.
-                resual_kr_simple_fusion_loss = 0.
-                resual_kr_enhanced_simple_fusion_loss = 0.
-                rkd_att_loss = 0.
-                rkd_rep_loss = 0.
-                batch_rkd_rep_loss = 0.
-                super_contr_loss=0.
-
-                is_student = True
-                # if not args.pred_distill:
-                #     is_student = True
-
-                student_logits, student_atts, student_reps, student_att_probs,original_student_reps = student_model(input_ids, segment_ids, input_mask,
-                                                                                              is_student=is_student)
-                with torch.no_grad():
-                    teacher_logits, teacher_atts, teacher_reps, teacher_att_probs = teacher_model(
-                        input_ids, segment_ids, input_mask)
-
-                if not args.pred_distill:
-                    teacher_layer_num = len(teacher_atts)
-                    student_layer_num = len(student_atts)
-                    assert teacher_layer_num % student_layer_num == 0
-                    layers_per_block = int(
-                        teacher_layer_num / student_layer_num)
-                    new_teacher_atts = [teacher_atts[i * layers_per_block + layers_per_block - 1]
-                                        for i in range(student_layer_num)]
-                    student_atts=[torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),student_att) for student_att in student_atts]
-                    teacher_atts=[torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),teacher_att) for teacher_att in new_teacher_atts]
-                    att_loss=align_loss(student_atts,teacher_atts)
-                    rkd_att_loss=rkd_loss(student_atts,teacher_atts)
-                    # for student_att, teacher_att in zip(student_atts, new_teacher_atts):
-                    #     student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
-                    #                               student_att)  # 将被mask掉的位置置为0
-                    #     teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
-                    #                               teacher_att)
-
-                    #     tmp_loss = loss_mse(student_att, teacher_att)
-                    #     att_loss += tmp_loss
-
-                    new_teacher_reps = [teacher_reps[i * layers_per_block]
-                                        for i in range(student_layer_num + 1)]
-                    new_student_reps = student_reps  # ？student的fit_dense为什么只有1个
-
-                    # simple_fusion
-                    # new_teacher_att_probs = [teacher_att_probs[i * layers_per_block + layers_per_block - 1]
-                    #                          for i in range(student_layer_num)]
-                    # tmp_loss = embedding_loss(
-                    #     new_student_reps[0], new_teacher_reps[0])
-                    # emb_loss += tmp_loss
-                    # new_student_att_probs = student_att_probs
-                    # teacher_fusion_reps_list = cal_fusion_reps(new_teacher_att_probs, new_teacher_reps[1:])
-
-                    # student_fusion_reps_list, teacher_fusion_reps_list = cal_fusion_reps(
-                    #     new_student_att_probs, new_student_reps[1:]), cal_fusion_reps(new_teacher_att_probs, new_teacher_reps[1:])
-                    # for student_fusion_reps,teacher_fusion_reps in zip(student_fusion_reps_list,teacher_fusion_reps_list):
-                    #     tmp_loss=loss_mse(student_fusion_reps,teacher_fusion_reps)
-                    #     fusion_rep_loss +=tmp_loss
-                    # loss= emb_loss+fusion_rep_loss
-
-                    # resual kr with enhanced simple fusion
-                    # tmp_loss = resual_kr_simple_fusion(
-                    #     student_fusion_reps_list, teacher_fusion_reps_list)
-                    # resual_kr_simple_fusion_loss += tmp_loss
-                    # resual kr with enhanced simple fusion
-                    # tmp_loss = resual_kr_enhanced_simple_fusion(
-                    #     student_fusion_reps_list, teacher_fusion_reps_list)
-                    # resual_kr_enhanced_simple_fusion_loss += tmp_loss
-
-                    # loss = emb_loss+resual_kr_enhanced_simple_fusion_loss
-                    # tr_emb_loss += emb_loss.item()
-                    # tr_resual_kr_enhanced_simple_fusion_loss += resual_kr_enhanced_simple_fusion_loss.item()
-
-                    # loss = emb_loss+resual_kr_simple_fusion_loss
-                    # tr_emb_loss += emb_loss.item()
-                    # tr_resual_kr_simple_fusion_loss += resual_kr_simple_fusion_loss.item()
-                    # tr_fusion_rep_loss +=fusion_rep_loss.item()
-
-                    # rep_loss=hcl(new_student_reps,new_teacher_reps)
-
-                    # for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
-                    #     tmp_loss = loss_mse(student_rep, teacher_rep)
-                    #     rep_loss += tmp_loss
-
-                    # vanilla knowledge review
-                    # att_loss=att_knowledge_review(student_atts,new_teacher_atts)
-                    # rep_loss =rep_knowledge_review(new_student_reps,new_teacher_reps)
-                    rep_loss=align_loss(new_student_reps,new_teacher_reps)
-                    rkd_rep_loss=rkd_loss(new_student_reps,new_teacher_reps)
-                    loss = rep_loss + att_loss+rkd_att_loss+rkd_rep_loss
-                    tr_rkd_att_loss +=rkd_att_loss.item()
-                    tr_rkd_rep_loss +=rkd_rep_loss.item()
-                    tr_att_loss += att_loss.item()
-                    tr_rep_loss += rep_loss.item()
-                else:
-                    # student_rep=student_reps[-1][:,0,:]
-                    # teacher_rep=teacher_reps[-1][:,0,:]
-                    # batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
-                    student_rep=student_reps[-1][:,0,:]
-                    original_student_rep=original_student_reps[-1][:,0,:]
-                    teacher_rep=teacher_reps[-1][:,0,:]
-                    super_contr_loss=criterion_super_contr(student_rep,teacher_rep,labels=label_ids)
-                    # batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
-                    batch_rkd_rep_loss=new_rkd_batch_loss((original_student_rep,),(teacher_rep,),head_nums=1)
-                    if output_mode == "classification":  # ！ 这里只是使用了soft label，没用ground truth
-                        cls_loss = soft_cross_entropy(student_logits / args.temperature,
-                                                      teacher_logits / args.temperature)
-                    elif output_mode == "regression":
-                        loss_mse = MSELoss()
-                        # cls_loss = loss_mse(student_logits.view(-1), label_ids.view(-1))# ？这里有问题
-                        cls_loss = loss_mse(
-                            student_logits.view(-1), teacher_logits.view(-1))
-
-                    # loss = cls_loss + batch_rkd_rep_loss
-                    loss = cls_loss + super_contr_loss +batch_rkd_rep_loss
-                    tr_cls_loss += cls_loss.item()
-                    tr_batch_rkd_rep_loss +=batch_rkd_rep_loss.item()
-                    tr_super_contr_loss +=super_contr_loss.item()
-
-                if n_gpu > 1:
-                    loss = loss.mean()  # mean() to average on multi-gpu.
-                if args.gradient_accumulation_steps > 1:
-                    loss = loss / args.gradient_accumulation_steps
-
-                loss.backward()
-
-                tr_loss += loss.item()
-                nb_tr_examples += label_ids.size(0)
-                nb_tr_steps += 1
-                # print("##############################################")
-                # print(optimizer.schedule.get_lr())
-                # writer.add_scalar('{} lr'.format(task_name),
-                #                   np.array(optimizer.get_lr()), global_step)
-                if (step + 1) % args.gradient_accumulation_steps == 0:
-                    optimizer.step()
-                    optimizer.zero_grad()
-                    global_step += 1
-
-                if (global_step + 1) % args.eval_step == 0:
-                    logger.info("***** Running evaluation *****")
-                    logger.info("  Epoch = {} iter {} step".format(
-                        epoch_, global_step))
-                    logger.info("  Num examples = %d", len(eval_examples))
-                    logger.info("  Batch size = %d", args.eval_batch_size)
-
-                    student_model.eval()
-
-                    loss = tr_loss / (step + 1)
-                    cls_loss = tr_cls_loss / (step + 1)
-                    batch_rkd_rep_loss = tr_batch_rkd_rep_loss /(step+1)
-                    att_loss = tr_att_loss / (step + 1)
-                    rep_loss = tr_rep_loss / (step + 1)
-                    rkd_att_loss = tr_rkd_att_loss / (step+1)
-                    rkd_rep_loss = tr_rkd_rep_loss / (step+1)
-                    super_contr_loss=tr_super_contr_loss/(step+1)
-                    # vanilla knowledge review
-                    # att_loss = tr_att_loss / (step + 1)
-                    # rep_loss = tr_rep_loss / (step + 1)
-                    # simple fusion
-                    # emb_loss = tr_emb_loss /(step+1)
-                    # fusion_rep_loss = tr_fusion_rep_loss/(step+1)
-                    # resual kr with simple fusion
-                    # emb_loss = tr_emb_loss / (step+1)
-                    # resual_kr_simple_fusion_loss = tr_resual_kr_simple_fusion_loss / \
-                    #     (step+1)
-                    # resual kr with enhanced simple fusion
-                    # emb_loss = tr_emb_loss / (step+1)
-                    # resual_kr_enhanced_simple_fusion_loss = tr_resual_kr_enhanced_simple_fusion_loss / \
-                    #     (step+1)
-
-                    result = {}
-                    if args.pred_distill:
-                        result = do_eval(student_model, task_name, eval_dataloader,
-                                         device, output_mode, eval_labels, num_labels)
-                        writer.add_scalar('{} eval_loss'.format(
-                            task_name), result['eval_loss'], global_step)
-                        result['cls_loss'] = cls_loss
-                        result['batch_rkd_rep_loss']=batch_rkd_rep_loss
-                        result['super_contr_loss']=super_contr_loss
-                        writer.add_scalar('{} cls_loss'.format(
-                            task_name), cls_loss, global_step)
-                        writer.add_scalar('{} batch_rkd_rep_loss'.format(
-                            task_name), batch_rkd_rep_loss, global_step)
-                        writer.add_scalar('{} super_contr_loss'.format(task_name),super_contr_loss,global_step)
-
-                    if not args.pred_distill:
-                        result['att_loss'] = att_loss
-                        result['rep_loss'] = rep_loss
-                        result['rkd_att_loss'] = rkd_att_loss
-                        result['rkd_rep_loss'] = rkd_rep_loss
-                        # vanilla knowledge review
-                        # result['att_loss'] = att_loss
-                        # result['rep_loss'] = rep_loss
-                        # simple fusion
-                        # result['emb_loss'] = emb_loss
-                        # result['fusion_rep_loss'] = fusion_rep_loss
-                        # resual kr with simple fusion
-                        # result['emb_loss'] = emb_loss
-                        # result['resual_kr_simple_fusion_loss'] = resual_kr_simple_fusion_loss
-                        # resual kr with enhanced simple fusion
-                        # result['emb_loss'] = emb_loss
-                        # result['resual_kr_enhanced_simple_fusion_loss'] = resual_kr_enhanced_simple_fusion_loss
-
-                        writer.add_scalar('{} att_loss'.format(
-                            task_name), att_loss, global_step)
-                        writer.add_scalar('{} rep_loss'.format(
-                            task_name), rep_loss, global_step)
-                        writer.add_scalar('{} rkd_att_loss'.format(
-                            task_name), rkd_att_loss, global_step)
-                        writer.add_scalar('{} rkd_rep_loss'.format(
-                            task_name), rkd_rep_loss, global_step)
-                        # vanilla knowledge review
-                        # writer.add_scalar('{} att_loss'.format(task_name),att_loss,global_step)
-                        # writer.add_scalar('{} rep_loss'.format(task_name),rep_loss,global_step)
-                        # simple fusion
-                        # writer.add_scalar('{} emb_loss'.format(task_name),emb_loss,global_step)
-                        # writer.add_scalar('{} fusion_rep_loss'.format(task_name),fusion_rep_loss,global_step)
-                        # resual kr with simple fusion
-                        # writer.add_scalar('{} emb_loss'.format(
-                        #     task_name), emb_loss, global_step)
-                        # writer.add_scalar('{} resual_kr_simple_fusion_loss'.format(
-                        #     task_name), resual_kr_simple_fusion_loss, global_step)
-                        # resual kr with enhanced simple fusion
-                        # writer.add_scalar('{} emb_loss'.format(
-                        #     task_name), emb_loss, global_step)
-                        # writer.add_scalar('{} resual_kr_enhanced_simple_fusion_loss'.format(
-                        #     task_name), resual_kr_enhanced_simple_fusion_loss, global_step)
-
-                    result['global_step'] = global_step
-                    result['loss'] = loss
-                    writer.add_scalar('{} train_loss'.format(
-                        task_name), loss, global_step)
-                    result_to_file(result, output_eval_file)
-
-                    if not args.pred_distill:  # 中间层蒸馏每次都保存
-                        save_model = True
-                    else:
-                        save_model = False  # 预测层蒸馏只保存最好结果
-
-                        if task_name in acc_tasks:
-                            writer.add_scalar('{} acc'.format(
-                                task_name), result['acc'], global_step)
-                            if result['acc'] > best_dev_metric:
-                                best_dev_metric = result['acc']
-                                best_dev_metric_str = str(best_dev_metric)
-                                save_model = True
-
-                        if task_name in corr_tasks:
-                            writer.add_scalar('{} spearman corr'.format(
-                                task_name), result['spearman'], global_step)
-                            if result['spearman'] > best_dev_metric:
-                                best_dev_metric = result['spearman']
-                                best_dev_metric_str = str(best_dev_metric)
-                                save_model = True
-
-                        if task_name in mcc_tasks:
-                            writer.add_scalar('{} mcc'.format(
-                                task_name), result['mcc'], global_step)
-                            if result['mcc'] > best_dev_metric:
-                                best_dev_metric = result['mcc']
-                                best_dev_metric_str = str(best_dev_metric)
-                                save_model = True
-
-                        if task_name in f1_tasks:
-                            writer.add_scalar('{} f1'.format(
-                                task_name), result['f1'], global_step)
-                            if result['f1'] > best_dev_metric:
-                                best_dev_metric = result['f1']
-                                best_dev_metric_str = str(best_dev_metric)
-                                save_model = True
-
-                    if save_model:
-                        logger.info("***** Save model *****")
-
-                        model_to_save = student_model.module if hasattr(
-                            student_model, 'module') else student_model
-
-                        model_name = WEIGHTS_NAME
-                        # if not args.pred_distill:
-                        #     model_name = "step_{}_{}".format(global_step, WEIGHTS_NAME)
-                        output_model_file = os.path.join(
-                            args.output_dir, model_name)
-                        output_config_file = os.path.join(
-                            args.output_dir, CONFIG_NAME)
-
-                        torch.save(model_to_save.state_dict(),
-                                   output_model_file)
-                        model_to_save.config.to_json_file(output_config_file)
-                        tokenizer.save_vocabulary(args.output_dir)
-
-                    student_model.train()
-
-        if args.pred_distill:
-            # Test mnli-mm
-            if task_name == "mnli":
-                task_name = "mnli-mm"
-                processor = processors[task_name]()
-                if not os.path.exists(args.output_dir + '-MM'):
-                    os.makedirs(args.output_dir + '-MM')
-
-                eval_examples = processor.get_dev_examples(
-                    args.data_dir)
-
-                eval_features = convert_examples_to_features(
-                    eval_examples, label_list, args.max_seq_length, tokenizer, output_mode)
-                eval_data, eval_labels = get_tensor_data(
-                    output_mode, eval_features)
-
-                logger.info("***** Running mm evaluation *****")
-                logger.info("  Num examples = %d",
-                            len(eval_examples))
-                logger.info("  Batch size = %d",
-                            args.eval_batch_size)
-
-                eval_sampler = SequentialSampler(eval_data)
-                eval_dataloader = DataLoader(eval_data, sampler=eval_sampler,
-                                             batch_size=args.eval_batch_size)
-
-                result = do_eval(student_model, task_name, eval_dataloader,
-                                 device, output_mode, eval_labels, num_labels)
-
-                result['global_step'] = global_step
-
-                tmp_output_eval_file = os.path.join(
-                    args.output_dir + '-MM', "final.results")
-                result_to_file(result, tmp_output_eval_file)
-                task_name = 'mnli'
-
-            # model_to_save =student_model.module if hasattr(student_model,'module') else student_model
-            # parameter_size = model_to_save.calc_sampled_param_num()
-
-            output_str = "**************S*************\n" + \
-                "task_name = {}\n".format(task_name) + \
-                "best_metirc = %s\n" % best_dev_metric_str + \
-                "**************E*************\n"
-
-            logger.info(output_str)
-            output_eval_file = os.path.join(
-                args.output_dir, "final.results")
-            with open(output_eval_file, "a+") as writer:
-                writer.write(output_str + '\n')
-
-                # if oncloud:
-                #     logging.info(mox.file.list_directory(args.output_dir, recursive=True))
-                #     logging.info(mox.file.list_directory('.', recursive=True))
-                #     mox.file.copy_parallel(args.output_dir, args.data_url)
-                #     mox.file.copy_parallel('.', args.data_url)
+    eval_examples = processor.get_dev_examples(args.data_dir)
+    eval_features = convert_examples_to_features(
+        eval_examples, label_list, args.max_seq_length, tokenizer, output_mode)
+    eval_data, eval_labels = get_tensor_data(output_mode, eval_features)
+    eval_sampler = RandomSampler(eval_data)
+    eval_dataloader = DataLoader(
+        eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
+
+    teacher_model = TinyBertForSequenceClassification.from_pretrained(
+        args.teacher_model, num_labels=num_labels, is_student=False)
+    teacher_model.to(device)
+    for step, batch in enumerate(tqdm(eval_dataloader, desc="Iteration", ascii=True)):
+        batch = tuple(t.to(device) for t in batch)
+
+        input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch
+        sorted_label_ids, indices = torch.sort(label_ids)
+        sorted_input_ids = torch.index_select(input_ids, 0, indices)
+        sorted_input_mask = torch.index_select(input_mask, 0, indices)
+        sorted_segment_ids = torch.index_select(segment_ids, 0, indices)
+        # if input_ids.size()[0] != args.train_batch_size:
+        #     continue
+        with torch.no_grad():
+            teacher_logits, teacher_atts, teacher_reps, teacher_att_probs = teacher_model(
+                sorted_input_ids, sorted_segment_ids, sorted_input_mask)
+        teacher_rep = teacher_reps[-1][:, 0, :]
+        relation_matrix = torch.div(torch.matmul(
+            teacher_rep, teacher_rep.transpose(-2, -1)), math.sqrt(teacher_rep.shape[1]))
+
+        np.save('figures\\ralation_matrices\\{}.npy'.format(task_name),relation_matrix.cpu().numpy())
+        # relation_matrix=F.softmax(dot_product,-1)
+        # plt.figure()
+        # plt.imshow(relation_matrix.cpu(), cmap="YlGnBu")
+        # plt.savefig('test.eps', dpi=600, format='eps')
+        # plt.show()
 
 
 if __name__ == "__main__":
