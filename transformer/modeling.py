@@ -360,7 +360,8 @@ class BertEmbeddings(nn.Module):
 
         embeddings = words_embeddings + position_embeddings + token_type_embeddings
         embeddings = self.LayerNorm(embeddings)
-        words_embeddings_=self.LayerNorm(words_embeddings)
+        # words_embeddings_=self.LayerNorm(words_embeddings)
+        words_embeddings_=embeddings
         embeddings = self.dropout(embeddings)
         return embeddings,words_embeddings_
 
