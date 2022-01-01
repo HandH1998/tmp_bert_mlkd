@@ -47,8 +47,8 @@ from transformer.optimization import BertAdam
 from transformer.file_utils import WEIGHTS_NAME, CONFIG_NAME
 import torch.nn.functional as F
 import shutil
+from losses import SupConLoss
 import math
-
 
 # csv.field_size_limit(sys.maxsize)
 csv.field_size_limit(1000000000)
@@ -846,8 +846,13 @@ def main():
                         default="model/fine-tuned_pretrained_model/mrpc/on_original_data",
                         type=str,
                         help="The teacher model dir.")
+    # parser.add_argument("--student_model",
+    #                     default="model/distilled_pretrained_model/2nd_General_TinyBERT_4L_312D",
+    #                     type=str,
+    #                     required=False,
+    #                     help="The student model dir.")
     parser.add_argument("--student_model",
-                        default="model/distilled_pretrained_model/2nd_General_TinyBERT_4L_312D",
+                        default="model/distilled_fine-tuned_model/mrpc/on_original_data",
                         type=str,
                         required=False,
                         help="The student model dir.")
@@ -937,7 +942,7 @@ def main():
                         type=int,
                         default=50)
     parser.add_argument('--pred_distill',
-                        # default=True,
+                        default=True,
                         action='store_true')
     parser.add_argument('--data_url',
                         type=str,
@@ -1307,27 +1312,33 @@ def main():
             for st, te in zip(student, teacher):
                 loss += loss_mse(st, te)
             return loss
-
-        def new_rkd_loss(student, teacher, head_nums=12):
-            loss = 0.
-            student_head_size = student[0].shape[-1]//head_nums
-            teacher_head_size = teacher[0].shape[-1]//head_nums
-            student = [st.view(
-                st.shape[0], st.shape[1], head_nums, -1).permute(0, 2, 1, 3) for st in student]
-            teacher = [te.view(
-                te.shape[0], te.shape[1], head_nums, -1).permute(0, 2, 1, 3) for te in teacher]
-            student_relation = [torch.div(torch.matmul(
-                st, st.transpose(-2, -1)), math.sqrt(student_head_size)) for st in student]
-            teacher_relation = [torch.div(torch.matmul(
-                te, te.transpose(-2, -1)), math.sqrt(teacher_head_size)) for te in teacher]
-            for st, te in zip(student_relation, teacher_relation):
-                st_log_probs = F.log_softmax(
-                    st, -1).view(-1, student_relation[0].shape[-1])
-                te_probs = F.softmax(
-                    te, -1).view(-1, teacher_relation[0].shape[-1])
-                loss += F.kl_div(st_log_probs, te_probs, reduction='batchmean')
+        def new_rkd_loss(student,teacher,head_nums=12):
+            loss=0.
+            student_head_size=student[0].shape[-1]//head_nums
+            teacher_head_size=teacher[0].shape[-1]//head_nums
+            student=[st.view(st.shape[0],st.shape[1],head_nums,-1).permute(0,2,1,3) for st in student]
+            teacher=[te.view(te.shape[0],te.shape[1],head_nums,-1).permute(0,2,1,3) for te in teacher]
+            student_relation=[torch.div(torch.matmul(st,st.transpose(-2,-1)),math.sqrt(student_head_size)) for st in student]
+            teacher_relation=[torch.div(torch.matmul(te,te.transpose(-2,-1)),math.sqrt(teacher_head_size)) for te in teacher]
+            for st,te in zip(student_relation,teacher_relation):
+                st_log_probs=F.log_softmax(st,-1).view(-1,student_relation[0].shape[-1])
+                te_probs=F.softmax(te,-1).view(-1,teacher_relation[0].shape[-1])
+                loss +=F.kl_div(st_log_probs,te_probs,reduction='batchmean')
             return loss
-
+        def new_rkd_batch_loss(student,teacher,head_nums=12):
+            loss=0.
+            student_head_size=student[0].shape[-1]//head_nums
+            teacher_head_size=teacher[0].shape[-1]//head_nums
+            student=[st.view(st.shape[0],head_nums,-1).permute(1,0,2) for st in student]
+            teacher=[te.view(te.shape[0],head_nums,-1).permute(1,0,2) for te in teacher]
+            student_relation=[torch.div(torch.matmul(st,st.transpose(-2,-1)),math.sqrt(student_head_size)) for st in student]
+            teacher_relation=[torch.div(torch.matmul(te,te.transpose(-2,-1)),math.sqrt(teacher_head_size)) for te in teacher]
+            for st,te in zip(student_relation,teacher_relation):
+                st_log_probs=F.log_softmax(st,-1).view(-1,student_relation[0].shape[-1])
+                te_probs=F.softmax(te,-1).view(-1,teacher_relation[0].shape[-1])
+                loss +=F.kl_div(st_log_probs,te_probs,reduction='batchmean')
+            return loss
+        criterion_super_contr=SupConLoss()
         # Train and evaluate
         global_step = 0
         best_dev_metric = 0.0
@@ -1346,6 +1357,8 @@ def main():
             tr_rkd_rep_loss = 0.
             tr_self_out_loss = 0.
             tr_rkd_emb_loss = 0.
+            tr_batch_rkd_rep_loss=0.
+            tr_super_contr_loss=0.
 
             student_model.train()
             nb_tr_examples, nb_tr_steps = 0, 0
@@ -1368,6 +1381,8 @@ def main():
                 rkd_rep_loss = 0.
                 self_out_loss = 0.
                 rkd_emb_loss = 0.
+                batch_rkd_rep_loss = 0.
+                super_contr_loss=0.
 
                 is_student = True
                 # if not args.pred_distill:
@@ -1389,94 +1404,28 @@ def main():
                                              for i in range(student_layer_num)]
                     self_out_loss = new_rkd_loss(
                         student_all_self_outs, new_teacher_self_outs, head_nums=12)
-                    # new_teacher_atts = [teacher_atts[i * layers_per_block + layers_per_block - 1]
-                    #                     for i in range(student_layer_num)]
-                    # student_atts=[torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),student_att) for student_att in student_atts]
-                    # teacher_atts=[torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),teacher_att) for teacher_att in new_teacher_atts]
-                    # att_loss=align_loss(student_atts,teacher_atts)
-                    # rkd_att_loss=rkd_loss(student_atts,teacher_atts)
-                    # new_teacher_att_probs = [teacher_att_probs[i * layers_per_block + layers_per_block - 1]
-                    #                          for i in range(student_layer_num)]
-                    # rkd_att_loss=rkd_loss(student_att_probs,new_teacher_att_probs)
-
-                    # for student_att, teacher_att in zip(student_atts, new_teacher_atts):
-                    #     student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
-                    #                               student_att)  # 将被mask掉的位置置为0
-                    #     teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
-                    #                               teacher_att)
-
-                    #     tmp_loss = loss_mse(student_att, teacher_att)
-                    #     att_loss += tmp_loss
 
                     new_teacher_reps = [teacher_reps[i * layers_per_block]
                                         for i in range(student_layer_num + 1)]
                     new_student_reps = student_reps  # ？student的fit_dense为什么只有1个
                     rep_loss = align_loss(new_student_reps, new_teacher_reps)
-                    # simple_fusion
-                    # new_teacher_att_probs = [teacher_att_probs[i * layers_per_block + layers_per_block - 1]
-                    #                          for i in range(student_layer_num)]
-                    # tmp_loss = embedding_loss(
-                    #     new_student_reps[0], new_teacher_reps[0])
-                    # emb_loss += tmp_loss
-                    # new_student_att_probs = student_att_probs
-                    # teacher_fusion_reps_list = cal_fusion_reps(new_teacher_att_probs, new_teacher_reps[1:])
-
-                    # student_fusion_reps_list, teacher_fusion_reps_list = cal_fusion_reps(
-                    #     new_student_att_probs, new_student_reps[1:]), cal_fusion_reps(new_teacher_att_probs, new_teacher_reps[1:])
-                    # for student_fusion_reps,teacher_fusion_reps in zip(student_fusion_reps_list,teacher_fusion_reps_list):
-                    #     tmp_loss=loss_mse(student_fusion_reps,teacher_fusion_reps)
-                    #     fusion_rep_loss +=tmp_loss
-                    # loss= emb_loss+fusion_rep_loss
-
-                    # resual kr with enhanced simple fusion
-                    # tmp_loss = resual_kr_simple_fusion(
-                    #     student_fusion_reps_list, teacher_fusion_reps_list)
-                    # resual_kr_simple_fusion_loss += tmp_loss
-                    # resual kr with enhanced simple fusion
-                    # tmp_loss = resual_kr_enhanced_simple_fusion(
-                    #     student_fusion_reps_list, teacher_fusion_reps_list)
-                    # resual_kr_enhanced_simple_fusion_loss += tmp_loss
-
-                    # loss = emb_loss+resual_kr_enhanced_simple_fusion_loss
-                    # tr_emb_loss += emb_loss.item()
-                    # tr_resual_kr_enhanced_simple_fusion_loss += resual_kr_enhanced_simple_fusion_loss.item()
-
-                    # loss = emb_loss+resual_kr_simple_fusion_loss
-                    # tr_emb_loss += emb_loss.item()
-                    # tr_resual_kr_simple_fusion_loss += resual_kr_simple_fusion_loss.item()
-                    # tr_fusion_rep_loss +=fusion_rep_loss.item()
-
-                    # rep_loss=hcl(new_student_reps,new_teacher_reps)
-
-                    # for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
-                    #     tmp_loss = loss_mse(student_rep, teacher_rep)
-                    #     rep_loss += tmp_loss
-
-                    # vanilla knowledge review
-                    # att_loss=att_knowledge_review(student_atts,new_teacher_atts)
-                    # rep_loss =rep_knowledge_review(new_student_reps,new_teacher_reps)
-
-                    # rkd_rep_loss=rkd_loss(new_student_reps,new_teacher_reps)*10
-                    # rkd_rep_loss=new_rkd_loss(new_student_reps,new_teacher_reps,head_nums=12)
-                    # student_emb_rep = original_student_reps[0]
-                    # teacher_emb_rep = new_teacher_reps[0]
-                    # temp=new_rkd_loss((student_emb_rep,),(teacher_emb_rep,),head_nums=1)
+                    
                     rkd_emb_loss = new_rkd_loss(
                         (student_words_embeddings,), (teacher_words_embeddings,), head_nums=1)
-                    # new_student_reps=[student_rep[:,0,:] for student_rep in new_student_reps]
-                    # new_teacher_reps=[teacher_rep[:,0,:] for teacher_rep in new_teacher_reps]
-                    # rkd_rep_loss=new_rkd_loss(original_student_reps,new_teacher_reps)
-                    # rkd_rep_loss=rkd_kl_loss(new_student_reps,new_teacher_reps)
-                    # loss = rep_loss + att_loss+rkd_att_loss+rkd_rep_loss
-                    # loss = rep_loss +rkd_rep_loss + self_out_loss
                     loss = rep_loss + rkd_emb_loss + self_out_loss
-                    # tr_rkd_att_loss +=rkd_att_loss.item()
-                    # tr_rkd_rep_loss +=rkd_rep_loss.item()
                     tr_rkd_emb_loss += rkd_emb_loss.item()
-                    # tr_att_loss += att_loss.item()
                     tr_rep_loss += rep_loss.item()
                     tr_self_out_loss += self_out_loss.item()
                 else:
+                    # student_rep=student_reps[-1][:,0,:]
+                    # teacher_rep=teacher_reps[-1][:,0,:]
+                    # batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
+                    student_rep=student_reps[-1][:,0,:]
+                    original_student_rep=original_student_reps[-1][:,0,:]
+                    teacher_rep=teacher_reps[-1][:,0,:]
+                    super_contr_loss=criterion_super_contr(student_rep,teacher_rep,labels=label_ids)
+                    # batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
+                    batch_rkd_rep_loss=new_rkd_batch_loss((original_student_rep,),(teacher_rep,),head_nums=1)
                     if output_mode == "classification":  # ！ 这里只是使用了soft label，没用ground truth
                         cls_loss = soft_cross_entropy(student_logits / args.temperature,
                                                       teacher_logits / args.temperature)
@@ -1486,8 +1435,11 @@ def main():
                         cls_loss = loss_mse(
                             student_logits.view(-1), teacher_logits.view(-1))
 
-                    loss = cls_loss
+                    # loss = cls_loss + batch_rkd_rep_loss
+                    loss = cls_loss + super_contr_loss +batch_rkd_rep_loss
                     tr_cls_loss += cls_loss.item()
+                    tr_batch_rkd_rep_loss +=batch_rkd_rep_loss.item()
+                    tr_super_contr_loss +=super_contr_loss.item()
 
                 if n_gpu > 1:
                     loss = loss.mean()  # mean() to average on multi-gpu.
@@ -1499,10 +1451,7 @@ def main():
                 tr_loss += loss.item()
                 nb_tr_examples += label_ids.size(0)
                 nb_tr_steps += 1
-                # print("##############################################")
-                # print(optimizer.schedule.get_lr())
-                # writer.add_scalar('{} lr'.format(task_name),
-                #                   np.array(optimizer.get_lr()), global_step)
+
                 if (step + 1) % args.gradient_accumulation_steps == 0:
                     optimizer.step()
                     optimizer.zero_grad()
@@ -1518,27 +1467,12 @@ def main():
                     student_model.eval()
 
                     loss = tr_loss / (step + 1)
-                    cls_loss = tr_cls_loss / (step + 1)
-                    # att_loss = tr_att_loss / (step + 1)
-                    rep_loss = tr_rep_loss / (step + 1)
-                    # rkd_att_loss = tr_rkd_att_loss / (step+1)
-                    # rkd_rep_loss = tr_rkd_rep_loss / (step+1)
                     rkd_emb_loss = tr_rkd_emb_loss / (step+1)
+                    rep_loss = tr_rep_loss / (step + 1)
                     self_out_loss = tr_self_out_loss / (step+1)
-                    # vanilla knowledge review
-                    # att_loss = tr_att_loss / (step + 1)
-                    # rep_loss = tr_rep_loss / (step + 1)
-                    # simple fusion
-                    # emb_loss = tr_emb_loss /(step+1)
-                    # fusion_rep_loss = tr_fusion_rep_loss/(step+1)
-                    # resual kr with simple fusion
-                    # emb_loss = tr_emb_loss / (step+1)
-                    # resual_kr_simple_fusion_loss = tr_resual_kr_simple_fusion_loss / \
-                    #     (step+1)
-                    # resual kr with enhanced simple fusion
-                    # emb_loss = tr_emb_loss / (step+1)
-                    # resual_kr_enhanced_simple_fusion_loss = tr_resual_kr_enhanced_simple_fusion_loss / \
-                    #     (step+1)
+                    cls_loss = tr_cls_loss / (step + 1)
+                    batch_rkd_rep_loss = tr_batch_rkd_rep_loss /(step+1)
+                    super_contr_loss=tr_super_contr_loss/(step+1)
 
                     result = {}
                     if args.pred_distill:
@@ -1547,58 +1481,25 @@ def main():
                         writer.add_scalar('{} eval_loss'.format(
                             task_name), result['eval_loss'], global_step)
                         result['cls_loss'] = cls_loss
+                        result['batch_rkd_rep_loss']=batch_rkd_rep_loss
+                        result['super_contr_loss']=super_contr_loss
                         writer.add_scalar('{} cls_loss'.format(
                             task_name), cls_loss, global_step)
+                        writer.add_scalar('{} batch_rkd_rep_loss'.format(
+                            task_name), batch_rkd_rep_loss, global_step)
+                        writer.add_scalar('{} super_contr_loss'.format(task_name),super_contr_loss,global_step)
 
                     if not args.pred_distill:
-                        # result['att_loss'] = att_loss
                         result['rep_loss'] = rep_loss
-                        # result['rkd_att_loss'] = rkd_att_loss
-                        # result['rkd_rep_loss'] = rkd_rep_loss
                         result['rkd_emb_loss'] = rkd_emb_loss
                         result['self_out_loss'] = self_out_loss
-                        # vanilla knowledge review
-                        # result['att_loss'] = att_loss
-                        # result['rep_loss'] = rep_loss
-                        # simple fusion
-                        # result['emb_loss'] = emb_loss
-                        # result['fusion_rep_loss'] = fusion_rep_loss
-                        # resual kr with simple fusion
-                        # result['emb_loss'] = emb_loss
-                        # result['resual_kr_simple_fusion_loss'] = resual_kr_simple_fusion_loss
-                        # resual kr with enhanced simple fusion
-                        # result['emb_loss'] = emb_loss
-                        # result['resual_kr_enhanced_simple_fusion_loss'] = resual_kr_enhanced_simple_fusion_loss
-
-                        # writer.add_scalar('{} att_loss'.format(
-                        #     task_name), att_loss, global_step)
                         writer.add_scalar('{} rep_loss'.format(
                             task_name), rep_loss, global_step)
-                        # writer.add_scalar('{} rkd_att_loss'.format(
-                        #     task_name), rkd_att_loss, global_step)
-                        # writer.add_scalar('{} rkd_rep_loss'.format(
-                        #     task_name), rkd_rep_loss, global_step)
                         writer.add_scalar('{} rkd_emb_loss'.format(
                             task_name), rkd_emb_loss, global_step)
                         writer.add_scalar('{} self_out_loss'.format(
                             task_name), self_out_loss, global_step)
-                        # vanilla knowledge review
-                        # writer.add_scalar('{} att_loss'.format(task_name),att_loss,global_step)
-                        # writer.add_scalar('{} rep_loss'.format(task_name),rep_loss,global_step)
-                        # simple fusion
-                        # writer.add_scalar('{} emb_loss'.format(task_name),emb_loss,global_step)
-                        # writer.add_scalar('{} fusion_rep_loss'.format(task_name),fusion_rep_loss,global_step)
-                        # resual kr with simple fusion
-                        # writer.add_scalar('{} emb_loss'.format(
-                        #     task_name), emb_loss, global_step)
-                        # writer.add_scalar('{} resual_kr_simple_fusion_loss'.format(
-                        #     task_name), resual_kr_simple_fusion_loss, global_step)
-                        # resual kr with enhanced simple fusion
-                        # writer.add_scalar('{} emb_loss'.format(
-                        #     task_name), emb_loss, global_step)
-                        # writer.add_scalar('{} resual_kr_enhanced_simple_fusion_loss'.format(
-                        #     task_name), resual_kr_enhanced_simple_fusion_loss, global_step)
-
+                        
                     result['global_step'] = global_step
                     result['loss'] = loss
                     writer.add_scalar('{} train_loss'.format(
@@ -1699,8 +1600,6 @@ def main():
                 result_to_file(result, tmp_output_eval_file)
                 task_name = 'mnli'
 
-            # model_to_save =student_model.module if hasattr(student_model,'module') else student_model
-            # parameter_size = model_to_save.calc_sampled_param_num()
 
             output_str = "**************S*************\n" + \
                 "task_name = {}\n".format(task_name) + \
@@ -1712,12 +1611,6 @@ def main():
                 args.output_dir, "final.results")
             with open(output_eval_file, "a+") as writer:
                 writer.write(output_str + '\n')
-
-                # if oncloud:
-                #     logging.info(mox.file.list_directory(args.output_dir, recursive=True))
-                #     logging.info(mox.file.list_directory('.', recursive=True))
-                #     mox.file.copy_parallel(args.output_dir, args.data_url)
-                #     mox.file.copy_parallel('.', args.data_url)
 
 
 if __name__ == "__main__":
