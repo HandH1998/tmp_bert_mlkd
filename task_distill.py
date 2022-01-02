@@ -27,7 +27,8 @@ import os
 import random
 import sys
 from datetime import datetime   
-
+from torchstat import stat
+from thop import profile
 import numpy as np
 import torch
 from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
@@ -621,67 +622,94 @@ def do_eval(model, task_name, eval_dataloader,
     eval_loss = 0
     nb_eval_steps = 0
     preds = []
+    infer_times = []
 
-    for batch_ in tqdm(eval_dataloader, desc="Evaluating"):
-        batch_ = tuple(t.to(device) for t in batch_)
-        with torch.no_grad():
-            input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch_
-
+    batch_=next(iter(eval_dataloader))
+    batch_ = tuple(t.to(device) for t in batch_)
+    input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch_
+    starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+    repetitions = 300
+    timings=np.zeros((repetitions,1))
+    #GPU-WARM-UP
+    for _ in range(10):
+        logits, _, _ = model(input_ids, segment_ids, input_mask)
+    # MEASURE PERFORMANCE
+    with torch.no_grad():
+        for rep in range(repetitions):
+            starter.record()
             logits, _, _ = model(input_ids, segment_ids, input_mask)
+            ender.record()
+            # WAIT FOR GPU SYNC
+            torch.cuda.synchronize()
+            curr_time = starter.elapsed_time(ender)
+            timings[rep] = curr_time
+    mean_syn = np.sum(timings) / repetitions
+    std_syn = np.std(timings)
+    mean_fps = 1000.*input_ids.shape[0] / mean_syn
+    print(' * Mean@1 {mean_syn:.3f}ms Std@5 {std_syn:.3f}ms FPS@1 {mean_fps:.2f}'.format(mean_syn=mean_syn, std_syn=std_syn, mean_fps=mean_fps))
+    print(mean_syn)
+    # for batch_ in tqdm(eval_dataloader, desc="Evaluating"):
+    #     batch_ = tuple(t.to(device) for t in batch_)
+    #     with torch.no_grad():
+    #         input_ids, input_mask, segment_ids, label_ids, seq_lengths = batch_
+    #         start = datetime.now()
+    #         logits, _, _ = model(input_ids, segment_ids, input_mask)
+    #         infer_times.append((datetime.now() - start).microseconds / 1000)
+    #     # create eval loss and other metric required by the task
+    #     if output_mode == "classification":
+    #         loss_fct = CrossEntropyLoss()
+    #         tmp_eval_loss = loss_fct(
+    #             logits.view(-1, num_labels), label_ids.view(-1))
+    #     elif output_mode == "regression":
+    #         loss_fct = MSELoss()
+    #         tmp_eval_loss = loss_fct(logits.view(-1), label_ids.view(-1))
 
-        # create eval loss and other metric required by the task
-        if output_mode == "classification":
-            loss_fct = CrossEntropyLoss()
-            tmp_eval_loss = loss_fct(
-                logits.view(-1, num_labels), label_ids.view(-1))
-        elif output_mode == "regression":
-            loss_fct = MSELoss()
-            tmp_eval_loss = loss_fct(logits.view(-1), label_ids.view(-1))
+    #     eval_loss += tmp_eval_loss.mean().item()
+    #     nb_eval_steps += 1
+    #     if len(preds) == 0:
+    #         preds.append(logits.detach().cpu().numpy())
+    #     else:
+    #         preds[0] = np.append(
+    #             preds[0], logits.detach().cpu().numpy(), axis=0)
 
-        eval_loss += tmp_eval_loss.mean().item()
-        nb_eval_steps += 1
-        if len(preds) == 0:
-            preds.append(logits.detach().cpu().numpy())
-        else:
-            preds[0] = np.append(
-                preds[0], logits.detach().cpu().numpy(), axis=0)
+    # eval_loss = eval_loss / nb_eval_steps
 
-    eval_loss = eval_loss / nb_eval_steps
-
-    preds = preds[0]
-    if output_mode == "classification":
-        preds = np.argmax(preds, axis=1)
-    elif output_mode == "regression":
-        preds = np.squeeze(preds)
-    result = compute_metrics(task_name, preds, eval_labels.numpy())
-    result['eval_loss'] = eval_loss
-
-    return result
+    # preds = preds[0]
+    # if output_mode == "classification":
+    #     preds = np.argmax(preds, axis=1)
+    # elif output_mode == "regression":
+    #     preds = np.squeeze(preds)
+    # result = compute_metrics(task_name, preds, eval_labels.numpy())
+    # result['eval_loss'] = eval_loss
+    # result['infer_cnt'] = len(infer_times)
+    # result['infer_time'] = sum(infer_times[1:]) / (len(infer_times)-1)
+    # return result
+    return []
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir",
-                        default="data\glue_data\MRPC",
+                        default="data/glue_data/MNLI",
                         type=str,
                         required=False,
                         help="The input data dir. Should contain the .tsv files (or other data files) for the task.")
     parser.add_argument("--teacher_model",
-                        default="model\\fine-tuned_pretrained_model\mrpc\on_original_data",
+                        default="model/fine-tuned_pretrained_model/mrpc/on_original_data",
                         type=str,
                         help="The teacher model dir.")
     parser.add_argument("--student_model",
-                        default="model\distilled_pretrained_model\\2nd_General_TinyBERT_4L_312D",
+                        default="model/distilled_pretrained_model/2nd_General_TinyBERT_4L_312D",
                         type=str,
                         required=False,
                         help="The student model dir.")
     parser.add_argument("--task_name",
-                        default="mrpc",
+                        default="mnli",
                         type=str,
                         required=False,
                         help="The name of the task to train.")
     parser.add_argument("--output_dir",
-                        default="model\distilled_fine-tuned_model\mrpc\on_original_data",
+                        default="model/knowledge_review/distilled_intermediate_model/mrpc/on_original_data",
                         type=str,
                         required=False,
                         help="The output directory where the model predictions and checkpoints will be written.")
@@ -696,7 +724,7 @@ def main():
                              "Sequences longer than this will be truncated, and sequences shorter \n"
                              "than this will be padded.")
     parser.add_argument("--do_eval",
-                        # default=True,
+                        default=True,
                         action='store_true',
                         help="Whether to run eval on the dev set.")
     parser.add_argument("--do_lower_case",
@@ -708,7 +736,7 @@ def main():
                         type=int,
                         help="Total batch size for training.")
     parser.add_argument("--eval_batch_size",
-                        default=32,
+                        default=128,
                         type=int,
                         help="Total batch size for eval.")
     parser.add_argument("--learning_rate",
@@ -892,6 +920,7 @@ def main():
     student_model = TinyBertForSequenceClassification.from_pretrained(
         args.student_model, num_labels=num_labels, is_student=True)
     student_model.to(device)
+    # stat(student_model,((128,128),(128,128),(128,128)))
     if args.do_eval:
         logger.info("***** Running evaluation *****")
         logger.info("  Num examples = %d", len(eval_examples))
@@ -900,9 +929,9 @@ def main():
         student_model.eval()
         result = do_eval(student_model, task_name, eval_dataloader,
                          device, output_mode, eval_labels, num_labels)
-        logger.info("***** Eval results *****")
-        for key in sorted(result.keys()):
-            logger.info("  %s = %s", key, str(result[key]))
+        # logger.info("***** Eval results *****")
+        # for key in sorted(result.keys()):
+        #     logger.info("  %s = %s", key, str(result[key]))
     else:
         logger.info("***** Running training *****")
         logger.info("  Num examples = %d", len(train_examples))
