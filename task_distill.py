@@ -36,7 +36,7 @@ import torch
 from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
                               TensorDataset)
 from tqdm import tqdm, trange
-
+import random
 from torch.nn import CrossEntropyLoss, MSELoss
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import matthews_corrcoef, f1_score
@@ -1325,6 +1325,24 @@ def main():
                 te_probs=F.softmax(te,-1).view(-1,teacher_relation[0].shape[-1])
                 loss +=F.kl_div(st_log_probs,te_probs,reduction='batchmean')
             return loss
+        def new_rkd_rand_head_loss(student,teacher,teacher_head_nums=12,student_head_nums=12):
+            loss=0.
+            student_head_size=student[0].shape[-1]//student_head_nums
+            teacher_head_size=teacher[0].shape[-1]//teacher_head_nums
+            student=[st.view(st.shape[0],st.shape[1],student_head_nums,-1).permute(0,2,1,3) for st in student]
+            teacher=[te.view(te.shape[0],te.shape[1],teacher_head_nums,-1).permute(0,2,1,3) for te in teacher]
+            def randIndex():
+                index=torch.tensor([random.randint(i,i+teacher_head_nums//student_head_nums-1) for i in range(0,teacher_head_nums,teacher_head_nums//student_head_nums)])
+                return index.to(device)
+            teacher=[torch.index_select(te,1,randIndex()) for te in teacher]
+            student_relation=[torch.div(torch.matmul(st,st.transpose(-2,-1)),math.sqrt(student_head_size)) for st in student]
+            teacher_relation=[torch.div(torch.matmul(te,te.transpose(-2,-1)),math.sqrt(teacher_head_size)) for te in teacher]
+            for st,te in zip(student_relation,teacher_relation):
+                st_log_probs=F.log_softmax(st,-1).view(-1,student_relation[0].shape[-1])
+                te_probs=F.softmax(te,-1).view(-1,teacher_relation[0].shape[-1])
+                loss +=F.kl_div(st_log_probs,te_probs,reduction='batchmean')
+            return loss
+
         def new_rkd_batch_loss(student,teacher,head_nums=12):
             loss=0.
             student_head_size=student[0].shape[-1]//head_nums
@@ -1402,9 +1420,10 @@ def main():
                         teacher_layer_num / student_layer_num)
                     new_teacher_self_outs = [teacher_all_self_outs[i * layers_per_block + layers_per_block - 1]
                                              for i in range(student_layer_num)]
-                    self_out_loss = new_rkd_loss(
-                        student_all_self_outs, new_teacher_self_outs, head_nums=12)
-
+                    # self_out_loss = new_rkd_loss(
+                    #     student_all_self_outs, new_teacher_self_outs, head_nums=12)
+                    self_out_loss = new_rkd_rand_head_loss(
+                        student_all_self_outs, new_teacher_self_outs, student_head_nums=6)
                     new_teacher_reps = [teacher_reps[i * layers_per_block]
                                         for i in range(student_layer_num + 1)]
                     new_student_reps = student_reps  # ？student的fit_dense为什么只有1个
