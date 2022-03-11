@@ -1408,7 +1408,8 @@ def main():
                     new_teacher_reps = [teacher_reps[i * layers_per_block]
                                         for i in range(student_layer_num + 1)]
                     new_student_reps = student_reps  # ？student的fit_dense为什么只有1个
-                    rep_loss = align_loss(new_student_reps, new_teacher_reps)
+                    # rep_loss = align_loss(new_student_reps, new_teacher_reps)
+                    rep_loss = new_rkd_loss(new_student_reps, new_teacher_reps, head_nums=12)
                     
                     rkd_emb_loss = new_rkd_loss(
                         (student_words_embeddings,), (teacher_words_embeddings,), head_nums=1)
