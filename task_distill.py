@@ -1402,8 +1402,10 @@ def main():
                         teacher_layer_num / student_layer_num)
                     new_teacher_self_outs = [teacher_all_self_outs[i * layers_per_block + layers_per_block - 1]
                                              for i in range(student_layer_num)]
-                    self_out_loss = new_rkd_loss(
-                        student_all_self_outs, new_teacher_self_outs, head_nums=12)
+                    # self_out_loss = new_rkd_loss(
+                    #     student_all_self_outs, new_teacher_self_outs, head_nums=12)
+                    self_out_loss = align_loss(
+                        student_all_self_outs, new_teacher_self_outs)
 
                     new_teacher_reps = [teacher_reps[i * layers_per_block]
                                         for i in range(student_layer_num + 1)]
