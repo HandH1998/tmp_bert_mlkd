@@ -1155,8 +1155,8 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, num_labels)
         # self.fit_dense = nn.Linear(config.hidden_size, fit_size)# !修改
-        # if kwargs['is_student']:
-        #     self.fit_denses = nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers+1)])
+        if kwargs['is_student']:
+            self.fit_denses = nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers+1)])
             # self.repReviewKD=ReviewKD(1,config.num_hidden_layers+1)
             # self.attReviewKd=ReviewKD(config.num_attention_heads,config.num_hidden_layers)
         self.apply(self.init_bert_weights)
@@ -1169,10 +1169,10 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
 
         logits = self.classifier(torch.relu(pooled_output))
 
-        # tmp = []
+        tmp = []
         if is_student:
-            # for fit_dense,sequence_layer in zip(self.fit_denses,sequence_output):
-            #     tmp.append(fit_dense(sequence_layer))
+            for fit_dense,sequence_layer in zip(self.fit_denses,sequence_output):
+                tmp.append(fit_dense(sequence_layer))
             # for s_id, sequence_layer in enumerate(sequence_output):
             #     tmp.append(self.fit_dense(sequence_layer))
             # sequence_output = tmp
@@ -1180,7 +1180,7 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
             # sequence_output=self.repReviewKD(sequence_output)
             # att_output=self.attReviewKd(att_output)
             # return logits, att_output, sequence_output, att_probs,student_fusion_reps_list
-            return logits, att_output, sequence_output, att_probs,all_self_out,sequence_output,words_embeddings
+            return logits, att_output, tmp, att_probs,all_self_out,sequence_output,words_embeddings
         # return logits, att_output, sequence_output, att_probs,all_self_out
         return logits, att_output, sequence_output, att_probs,all_self_out,words_embeddings
 
