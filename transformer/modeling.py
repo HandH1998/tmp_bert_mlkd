@@ -1190,3 +1190,143 @@ class TinyBertForSequenceClassification(BertPreTrainedModel):
     #             fusion_reps_list.append(torch.matmul(
     #                 att_probs, hidden_states.unsqueeze(1)))
     #         return fusion_reps_list
+
+# class QuestionAnsweringModelOutput(ModelOutput):
+    # """
+    # Base class for outputs of question answering models.
+    # Args:
+    #     loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+    #         Total span extraction loss is the sum of a Cross-Entropy for the start and end positions.
+    #     start_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+    #         Span-start scores (before SoftMax).
+    #     end_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+    #         Span-end scores (before SoftMax).
+    #     hidden_states (`tuple(torch.FloatTensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+    #         Tuple of `torch.FloatTensor` (one for the output of the embeddings, if the model has an embedding layer, +
+    #         one for the output of each layer) of shape `(batch_size, sequence_length, hidden_size)`.
+    #         Hidden-states of the model at the output of each layer plus the optional initial embedding outputs.
+    #     attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+    #         Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+    #         sequence_length)`.
+    #         Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
+    #         heads.
+    # """
+
+    # loss: Optional[torch.FloatTensor] = None
+    # start_logits: torch.FloatTensor = None
+    # end_logits: torch.FloatTensor = None
+    # hidden_states: Optional[Tuple[torch.FloatTensor]] = None
+    # attentions: Optional[Tuple[torch.FloatTensor]] = None
+
+class BertForQuestionAnswering(BertPreTrainedModel):
+
+    # _keys_to_ignore_on_load_unexpected = [r"pooler"]
+
+    def __init__(self, config, num_labels, fit_size=768, **kwargs):
+        super().__init__(config)
+        self.num_labels = num_labels
+
+        self.bert = BertModel(config)
+        self.qa_outputs = nn.Linear(config.hidden_size, num_labels)
+        if kwargs['is_student']:
+            self.fit_denses = nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers+1)])
+        # Initialize weights and apply final processing
+        # self.post_init()
+        self.apply(self.init_bert_weights)
+
+
+    # @add_start_docstrings_to_model_forward(BERT_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
+    # @add_code_sample_docstrings(
+    #     processor_class=_TOKENIZER_FOR_DOC,
+    #     checkpoint=_CHECKPOINT_FOR_QA,
+    #     output_type=QuestionAnsweringModelOutput,
+    #     config_class=_CONFIG_FOR_DOC,
+    #     qa_target_start_index=_QA_TARGET_START_INDEX,
+    #     qa_target_end_index=_QA_TARGET_END_INDEX,
+    #     expected_output=_QA_EXPECTED_OUTPUT,
+    #     expected_loss=_QA_EXPECTED_LOSS,
+    # )
+    def forward(
+        self,
+        input_ids,
+        token_type_ids,
+        attention_mask,
+        # position_ids: Optional[torch.Tensor] = None,
+        # head_mask: Optional[torch.Tensor] = None,
+        # inputs_embeds: Optional[torch.Tensor] = None,
+        start_positions = None,
+        end_positions = None,
+        # output_attentions: Optional[bool] = None,
+        # output_hidden_states: Optional[bool] = None,
+        # return_dict: Optional[bool] = None,
+        is_student=False
+    ):
+        r"""
+        start_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the start of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        end_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the end of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        """
+        # return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        sequence_output, att_output, pooled_output, att_probs,all_self_out,words_embeddings = self.bert(
+            input_ids, 
+            token_type_ids, 
+            attention_mask,
+            output_all_encoded_layers=True, 
+            output_att=True
+        )
+
+        # sequence_output = outputs[0]
+        last_sequence_output = sequence_output[-1]
+        logits = self.qa_outputs(last_sequence_output)
+        start_logits, end_logits = logits.split(1, dim=-1)
+        start_logits = start_logits.squeeze(-1).contiguous()
+        end_logits = end_logits.squeeze(-1).contiguous()
+
+        tmp = []
+        if is_student:
+            for fit_dense,sequence_layer in zip(self.fit_denses,sequence_output):
+                tmp.append(fit_dense(sequence_layer))
+            # for s_id, sequence_layer in enumerate(sequence_output):
+            #     tmp.append(self.fit_dense(sequence_layer))
+            # sequence_output = tmp
+            # student_fusion_reps_list=self.cal_fusion_reps(att_probs,sequence_output[1:])
+            # sequence_output=self.repReviewKD(sequence_output)
+            # att_output=self.attReviewKd(att_output)
+            # return logits, att_output, sequence_output, att_probs,student_fusion_reps_list
+            return start_logits, end_logits, att_output, tmp, att_probs,all_self_out,sequence_output,words_embeddings
+        # return logits, att_output, sequence_output, att_probs,all_self_out
+        return  start_logits, end_logits, att_output, sequence_output, att_probs,all_self_out,words_embeddings
+        # total_loss = None
+        # if start_positions is not None and end_positions is not None:
+        #     # If we are on multi-GPU, split add a dimension
+        #     if len(start_positions.size()) > 1:
+        #         start_positions = start_positions.squeeze(-1)
+        #     if len(end_positions.size()) > 1:
+        #         end_positions = end_positions.squeeze(-1)
+        #     # sometimes the start/end positions are outside our model inputs, we ignore these terms
+        #     ignored_index = start_logits.size(1)
+        #     start_positions = start_positions.clamp(0, ignored_index)
+        #     end_positions = end_positions.clamp(0, ignored_index)
+
+        #     loss_fct = CrossEntropyLoss(ignore_index=ignored_index)
+        #     start_loss = loss_fct(start_logits, start_positions)
+        #     end_loss = loss_fct(end_logits, end_positions)
+        #     total_loss = (start_loss + end_loss) / 2
+
+        # if not return_dict:
+        #     output = (start_logits, end_logits) + outputs[2:]
+        #     return ((total_loss,) + output) if total_loss is not None else output
+
+        # return QuestionAnsweringModelOutput(
+        #     loss=total_loss,
+        #     start_logits=start_logits,
+        #     end_logits=end_logits,
+        #     hidden_states=outputs.hidden_states,
+        #     attentions=outputs.attentions,
+        # )
