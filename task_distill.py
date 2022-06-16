@@ -1951,6 +1951,7 @@ def main():
     parser.add_argument("--verbose_logging", action='store_true',
                         help="If true, all of the warnings related to data processing will be printed. "
                              "A number of warnings are expected for a normal SQuAD evaluation.")
+    parser.add_argument("--gpu_id", default=0, type=int)
     args = parser.parse_args()
     # logger.info('The args: {}'.format(args))
 
@@ -1994,9 +1995,9 @@ def main():
         "qqp": {"num_train_epochs": 6, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
         "qnli": {"num_train_epochs": 10, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 10},
         "rte": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10, "num_train_epochs_distill_prediction": 15},
-        "squad1": {"num_train_epochs": 6, "max_seq_length": 384,
+        "squad1": {"num_train_epochs": 4, "max_seq_length": 384,
                    "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16, "num_train_epochs_distill_prediction": 3},
-        "squad2": {"num_train_epochs": 6, "max_seq_length": 384,
+        "squad2": {"num_train_epochs": 4, "max_seq_length": 384,
                    "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16, "num_train_epochs_distill_prediction": 3},
     }
 
@@ -2009,7 +2010,9 @@ def main():
     # Prepare devices
     device = torch.device("cuda" if torch.cuda.is_available()
                           and not args.no_cuda else "cpu")
-    n_gpu = torch.cuda.device_count()
+    # n_gpu = torch.cuda.device_count()
+    torch.cuda.set_device(args.gpu_id)
+    n_gpu=1
 
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
@@ -2051,7 +2054,7 @@ def main():
         # args.eval_batch_size = default_params[task_name]["eval_batch_size"]
 
     if task_name in default_params:
-        args.max_seq_len = default_params[task_name]["max_seq_length"]
+        args.max_seq_length = default_params[task_name]["max_seq_length"]
         args.eval_step = default_params[task_name]["eval_step"]
 
     if not args.pred_distill and not args.do_eval:
@@ -2515,30 +2518,40 @@ def main():
                     assert teacher_layer_num % student_layer_num == 0
                     layers_per_block = int(
                         teacher_layer_num / student_layer_num)
-                    new_teacher_self_outs = [teacher_all_self_outs[i * layers_per_block + layers_per_block - 1]
-                                             for i in range(student_layer_num)]
-                    self_out_loss = new_rkd_loss(
-                        student_all_self_outs, new_teacher_self_outs, head_nums=12)
+                    new_teacher_atts = [teacher_atts[i * layers_per_block + layers_per_block - 1]
+                                        for i in range(student_layer_num)]
+                    for student_att, teacher_att in zip(student_atts, new_teacher_atts):
+                        student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(device),
+                                                  student_att)  # 将被mask掉的位置置为0
+                        teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(device),
+                                                  teacher_att)
+
+                        tmp_loss = loss_mse(student_att, teacher_att)
+                        att_loss += tmp_loss
+                    # new_teacher_self_outs = [teacher_all_self_outs[i * layers_per_block + layers_per_block - 1]
+                    #                          for i in range(student_layer_num)]
+                    # self_out_loss = new_rkd_loss(
+                    #     student_all_self_outs, new_teacher_self_outs, head_nums=12)
 
                     new_teacher_reps = [teacher_reps[i * layers_per_block]
                                         for i in range(student_layer_num + 1)]
                     new_student_reps = student_reps  # ？student的fit_dense为什么只有1个
                     rep_loss = align_loss(new_student_reps, new_teacher_reps)
 
-                    rkd_emb_loss = new_rkd_loss(
-                        (student_words_embeddings,), (teacher_words_embeddings,), head_nums=1)
-                    loss = rep_loss + rkd_emb_loss + self_out_loss
-                    tr_rkd_emb_loss += rkd_emb_loss.item()
+                    # rkd_emb_loss = new_rkd_loss(
+                    #     (student_words_embeddings,), (teacher_words_embeddings,), head_nums=1)
+                    loss = rep_loss + att_loss
+                    # tr_rkd_emb_loss += rkd_emb_loss.item()
                     tr_rep_loss += rep_loss.item()
-                    tr_self_out_loss += self_out_loss.item()
+                    tr_att_loss += att_loss.item()
                 else:
                     # student_rep=student_reps[-1][:,0,:]
                     # teacher_rep=teacher_reps[-1][:,0,:]
                     # batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
                     # student_rep = student_reps[-1][:, 0, :]
-                    original_student_rep = original_student_reps[-1]
-                    teacher_rep = teacher_reps[-1]
-                    rkd_rep_loss = new_rkd_loss((original_student_rep,), (teacher_rep,), head_nums=1)
+                    # original_student_rep = original_student_reps[-1]
+                    # teacher_rep = teacher_reps[-1]
+                    # rkd_rep_loss = new_rkd_loss((original_student_rep,), (teacher_rep,), head_nums=1)
                     # super_contr_loss = criterion_super_contr(
                     #     student_rep, teacher_rep, labels=label_ids)
                     # batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
@@ -2557,9 +2570,9 @@ def main():
                         cls_loss_end_position = soft_cross_entropy(student_end_logits / args.temperature, teacher_end_logits / args.temperature)
                         cls_loss = cls_loss_start_position + cls_loss_end_position
                         # loss = cls_loss + batch_rkd_rep_loss
-                    loss = cls_loss + rkd_rep_loss
+                    loss = cls_loss
                     tr_cls_loss += cls_loss.item()
-                    tr_rkd_rep_loss += rkd_rep_loss.item()
+                    # tr_rkd_rep_loss += rkd_rep_loss.item()
                     # tr_super_contr_loss += super_contr_loss.item()
 
                 if n_gpu > 1:
@@ -2591,11 +2604,11 @@ def main():
                     student_model.eval()
 
                     loss = tr_loss / (step + 1)
-                    rkd_emb_loss = tr_rkd_emb_loss / (step+1)
+                    # rkd_emb_loss = tr_rkd_emb_loss / (step+1)
                     rep_loss = tr_rep_loss / (step + 1)
-                    self_out_loss = tr_self_out_loss / (step+1)
+                    att_loss = tr_att_loss / (step+1)
                     cls_loss = tr_cls_loss / (step + 1)
-                    rkd_rep_loss = tr_rkd_rep_loss / (step+1)
+                    # rkd_rep_loss = tr_rkd_rep_loss / (step+1)
                     # super_contr_loss = tr_super_contr_loss/(step+1)
 
                     result = {}
@@ -2610,25 +2623,25 @@ def main():
                             writer.add_scalar('{} eval_loss'.format(
                                 task_name), result['eval_loss'], global_step)
                         result['cls_loss'] = cls_loss
-                        result['rkd_rep_loss'] = rkd_rep_loss
+                        # result['rkd_rep_loss'] = rkd_rep_loss
                         # result['super_contr_loss'] = super_contr_loss
                         writer.add_scalar('{} cls_loss'.format(
                             task_name), cls_loss, global_step)
-                        writer.add_scalar('{} rkd_rep_loss'.format(
-                            task_name), rkd_rep_loss, global_step)
+                        # writer.add_scalar('{} rkd_rep_loss'.format(
+                        #     task_name), rkd_rep_loss, global_step)
                         # writer.add_scalar('{} super_contr_loss'.format(
                         #     task_name), super_contr_loss, global_step)
 
                     if not args.pred_distill:
                         result['rep_loss'] = rep_loss
-                        result['rkd_emb_loss'] = rkd_emb_loss
-                        result['self_out_loss'] = self_out_loss
+                        # result['rkd_emb_loss'] = rkd_emb_loss
+                        result['att_loss'] = att_loss
                         writer.add_scalar('{} rep_loss'.format(
                             task_name), rep_loss, global_step)
-                        writer.add_scalar('{} rkd_emb_loss'.format(
-                            task_name), rkd_emb_loss, global_step)
-                        writer.add_scalar('{} self_out_loss'.format(
-                            task_name), self_out_loss, global_step)
+                        # writer.add_scalar('{} rkd_emb_loss'.format(
+                        #     task_name), rkd_emb_loss, global_step)
+                        writer.add_scalar('{} att_loss'.format(
+                            task_name), att_loss, global_step)
 
                     result['global_step'] = global_step
                     result['loss'] = loss
@@ -2676,12 +2689,12 @@ def main():
                         if task_name in qa_tasks:
                             writer.add_scalar('{} f1'.format(
                                 task_name), result['f1'], global_step)
-                            writer.add_scalar('{} em'.format(
-                                task_name), result['em'], global_step)
-                            if result['f1'] + result['em'] > best_dev_metric:
-                                best_dev_metric = result['f1'] + result['em']
-                                best_dev_metric_str = 'f1: {}; em: {}'.format(
-                                    result['f1'], result['em'])
+                            # writer.add_scalar('{} em'.format(
+                            #     task_name), result['em'], global_step)
+                            if result['f1']  > best_dev_metric:
+                                best_dev_metric = result['f1'] 
+                                best_dev_metric_str = 'f1: {}'.format(
+                                    result['f1'])
                                 save_model = True
 
                     if save_model:

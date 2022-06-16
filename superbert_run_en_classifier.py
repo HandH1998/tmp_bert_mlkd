@@ -45,7 +45,9 @@ from torch.nn import CrossEntropyLoss, MSELoss
 
 
 from auto_tinybert_transformer.modeling_super_kd import SuperBertForSequenceClassification, SuperBertForQuestionAnswering, BertConfig
-from auto_tinybert_transformer.tokenization import BertTokenizer, BasicTokenizer, whitespace_tokenize
+# from auto_tinybert_transformer.tokenization import BertTokenizer, BasicTokenizer, whitespace_tokenize
+from auto_tinybert_transformer.tokenization import BasicTokenizer, whitespace_tokenize
+from transformer.tokenization import BertTokenizer
 from auto_tinybert_transformer.optimization import BertAdam
 
 
@@ -1780,11 +1782,13 @@ def main():
 
     # Prepare devices
     # Always use the first gpu
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"        # TODO
+    # os.environ["CUDA_VISIBLE_DEVICES"] = "0"        # TODO
 
     device = torch.device("cuda" if torch.cuda.is_available()
                           and not args.no_cuda else "cpu")
-    n_gpu = torch.cuda.device_count()
+    # n_gpu = torch.cuda.device_count()
+    torch.cuda.set_device(1)
+    n_gpu = 1
 
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
