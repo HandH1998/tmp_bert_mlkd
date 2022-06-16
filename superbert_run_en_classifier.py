@@ -45,7 +45,9 @@ from torch.nn import CrossEntropyLoss, MSELoss
 
 
 from auto_tinybert_transformer.modeling_super_kd import SuperBertForSequenceClassification, SuperBertForQuestionAnswering, BertConfig
-from auto_tinybert_transformer.tokenization import BertTokenizer, BasicTokenizer, whitespace_tokenize
+# from auto_tinybert_transformer.tokenization import BertTokenizer, BasicTokenizer, whitespace_tokenize
+from auto_tinybert_transformer.tokenization import  BasicTokenizer, whitespace_tokenize
+from transformer.tokenization import BertTokenizer
 from auto_tinybert_transformer.optimization import BertAdam
 
 

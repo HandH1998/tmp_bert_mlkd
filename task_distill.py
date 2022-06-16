@@ -1951,6 +1951,7 @@ def main():
     parser.add_argument("--verbose_logging", action='store_true',
                         help="If true, all of the warnings related to data processing will be printed. "
                              "A number of warnings are expected for a normal SQuAD evaluation.")
+    parser.add_argument("--gpu_id", default=0, type=int)
     args = parser.parse_args()
     # logger.info('The args: {}'.format(args))
 
@@ -1994,9 +1995,9 @@ def main():
         "qqp": {"num_train_epochs": 6, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 6},
         "qnli": {"num_train_epochs": 10, "max_seq_length": 128, "eval_step": 500, "num_train_epochs_distill_prediction": 10},
         "rte": {"num_train_epochs": 20, "max_seq_length": 128, "eval_step": 10, "num_train_epochs_distill_prediction": 15},
-        "squad1": {"num_train_epochs": 6, "max_seq_length": 384,
+        "squad1": {"num_train_epochs": 4, "max_seq_length": 384,
                    "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16, "num_train_epochs_distill_prediction": 3},
-        "squad2": {"num_train_epochs": 6, "max_seq_length": 384,
+        "squad2": {"num_train_epochs": 4, "max_seq_length": 384,
                    "learning_rate": 3e-5, "eval_step": 500, "train_batch_size": 16, "num_train_epochs_distill_prediction": 3},
     }
 
@@ -2009,7 +2010,9 @@ def main():
     # Prepare devices
     device = torch.device("cuda" if torch.cuda.is_available()
                           and not args.no_cuda else "cpu")
-    n_gpu = torch.cuda.device_count()
+    # n_gpu = torch.cuda.device_count()
+    torch.cuda.set_device(args.gpu_id)
+    n_gpu=1
 
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
@@ -2051,7 +2054,7 @@ def main():
         # args.eval_batch_size = default_params[task_name]["eval_batch_size"]
 
     if task_name in default_params:
-        args.max_seq_len = default_params[task_name]["max_seq_length"]
+        args.max_seq_length = default_params[task_name]["max_seq_length"]
         args.eval_step = default_params[task_name]["eval_step"]
 
     if not args.pred_distill and not args.do_eval:
@@ -2536,9 +2539,11 @@ def main():
                     # teacher_rep=teacher_reps[-1][:,0,:]
                     # batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
                     # student_rep = student_reps[-1][:, 0, :]
-                    original_student_rep = original_student_reps[-1]
-                    teacher_rep = teacher_reps[-1]
-                    rkd_rep_loss = new_rkd_loss((original_student_rep,), (teacher_rep,), head_nums=1)
+
+                    # original_student_rep = original_student_reps[-1]
+                    # teacher_rep = teacher_reps[-1]
+                    # rkd_rep_loss = new_rkd_loss((original_student_rep,), (teacher_rep,), head_nums=1)
+
                     # super_contr_loss = criterion_super_contr(
                     #     student_rep, teacher_rep, labels=label_ids)
                     # batch_rkd_rep_loss=rkd_loss((student_rep,),(teacher_rep,))
@@ -2557,9 +2562,9 @@ def main():
                         cls_loss_end_position = soft_cross_entropy(student_end_logits / args.temperature, teacher_end_logits / args.temperature)
                         cls_loss = cls_loss_start_position + cls_loss_end_position
                         # loss = cls_loss + batch_rkd_rep_loss
-                    loss = cls_loss + rkd_rep_loss
+                    loss = cls_loss
                     tr_cls_loss += cls_loss.item()
-                    tr_rkd_rep_loss += rkd_rep_loss.item()
+                    # tr_rkd_rep_loss += rkd_rep_loss.item()
                     # tr_super_contr_loss += super_contr_loss.item()
 
                 if n_gpu > 1:
@@ -2595,7 +2600,7 @@ def main():
                     rep_loss = tr_rep_loss / (step + 1)
                     self_out_loss = tr_self_out_loss / (step+1)
                     cls_loss = tr_cls_loss / (step + 1)
-                    rkd_rep_loss = tr_rkd_rep_loss / (step+1)
+                    # rkd_rep_loss = tr_rkd_rep_loss / (step+1)
                     # super_contr_loss = tr_super_contr_loss/(step+1)
 
                     result = {}
@@ -2610,12 +2615,12 @@ def main():
                             writer.add_scalar('{} eval_loss'.format(
                                 task_name), result['eval_loss'], global_step)
                         result['cls_loss'] = cls_loss
-                        result['rkd_rep_loss'] = rkd_rep_loss
+                        # result['rkd_rep_loss'] = rkd_rep_loss
                         # result['super_contr_loss'] = super_contr_loss
                         writer.add_scalar('{} cls_loss'.format(
                             task_name), cls_loss, global_step)
-                        writer.add_scalar('{} rkd_rep_loss'.format(
-                            task_name), rkd_rep_loss, global_step)
+                        # writer.add_scalar('{} rkd_rep_loss'.format(
+                        #     task_name), rkd_rep_loss, global_step)
                         # writer.add_scalar('{} super_contr_loss'.format(
                         #     task_name), super_contr_loss, global_step)
 
@@ -2676,12 +2681,12 @@ def main():
                         if task_name in qa_tasks:
                             writer.add_scalar('{} f1'.format(
                                 task_name), result['f1'], global_step)
-                            writer.add_scalar('{} em'.format(
-                                task_name), result['em'], global_step)
-                            if result['f1'] + result['em'] > best_dev_metric:
-                                best_dev_metric = result['f1'] + result['em']
-                                best_dev_metric_str = 'f1: {}; em: {}'.format(
-                                    result['f1'], result['em'])
+                            # writer.add_scalar('{} em'.format(
+                            #     task_name), result['em'], global_step)
+                            if result['f1']  > best_dev_metric:
+                                best_dev_metric = result['f1'] 
+                                best_dev_metric_str = 'f1: {}'.format(
+                                    result['f1'])
                                 save_model = True
 
                     if save_model:
