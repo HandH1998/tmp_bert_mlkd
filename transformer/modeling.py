@@ -963,20 +963,18 @@ class TinyBertForPreTraining(BertPreTrainedModel):
         self.bert = BertModel(config)
         self.cls = BertPreTrainingHeads(
             config, self.bert.embeddings.word_embeddings.weight)
-        self.fit_dense = nn.Linear(config.hidden_size, fit_size)
+        self.fit_denses = nn.ModuleList([nn.Linear(config.hidden_size, fit_size) for _ in  range(config.num_hidden_layers+1)])
         self.apply(self.init_bert_weights)
 
     def forward(self, input_ids, token_type_ids=None,
                 attention_mask=None, masked_lm_labels=None,
                 next_sentence_label=None, labels=None):
-        sequence_output, att_output, pooled_output = self.bert(
-            input_ids, token_type_ids, attention_mask)
+        sequence_output, att_output, pooled_output, att_probs,all_self_out,words_embeddings = self.bert(
+            input_ids, token_type_ids, attention_mask, output_all_encoded_layers=True, output_att=True)
         tmp = []
-        for s_id, sequence_layer in enumerate(sequence_output):
-            tmp.append(self.fit_dense(sequence_layer))
-        sequence_output = tmp
-
-        return att_output, sequence_output
+        for fit_dense,sequence_layer in zip(self.fit_denses,sequence_output):
+            tmp.append(fit_dense(sequence_layer))
+        return att_output, tmp, att_probs,all_self_out,sequence_output,words_embeddings
 
 
 class BertForMaskedLM(BertPreTrainedModel):

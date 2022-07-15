@@ -1952,6 +1952,8 @@ def main():
                         help="If true, all of the warnings related to data processing will be printed. "
                              "A number of warnings are expected for a normal SQuAD evaluation.")
     parser.add_argument("--gpu_id", default=0, type=int)
+    parser.add_argument("--split_num", default=12, type=int)
+    parser.add_argument("--fit_size", default=768, type=int)
     args = parser.parse_args()
     # logger.info('The args: {}'.format(args))
 
@@ -2010,9 +2012,9 @@ def main():
     # Prepare devices
     device = torch.device("cuda" if torch.cuda.is_available()
                           and not args.no_cuda else "cpu")
-    # n_gpu = torch.cuda.device_count()
-    torch.cuda.set_device(args.gpu_id)
-    n_gpu=1
+    n_gpu = torch.cuda.device_count()
+    # torch.cuda.set_device(args.gpu_id)
+    # n_gpu=1
 
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
@@ -2177,19 +2179,19 @@ def main():
     if not args.do_eval and not args.do_predict:
         if output_mode == "qa_classification":
             teacher_model = BertForQuestionAnswering.from_pretrained(
-                args.teacher_model, num_labels=num_labels, is_student=False
+                args.teacher_model, num_labels=num_labels, is_student=False, fit_size=args.fit_size
             )
         else:
             teacher_model = TinyBertForSequenceClassification.from_pretrained(
-                args.teacher_model, num_labels=num_labels, is_student=False)
+                args.teacher_model, num_labels=num_labels, is_student=False, fit_size=args.fit_size)
         teacher_model.to(device)
     if output_mode == "qa_classification":
         student_model = BertForQuestionAnswering.from_pretrained(
-            args.student_model, num_labels=num_labels, is_student=True
+            args.student_model, num_labels=num_labels, is_student=True, fit_size=args.fit_size
         )
     else:
         student_model = TinyBertForSequenceClassification.from_pretrained(
-            args.student_model, num_labels=num_labels, is_student=True)
+            args.student_model, num_labels=num_labels, is_student=True, fit_size=args.fit_size)
     student_model.to(device)
 
     if not args.do_eval and not args.do_predict:
@@ -2521,7 +2523,7 @@ def main():
                     new_teacher_self_outs = [teacher_all_self_outs[i * layers_per_block + layers_per_block - 1]
                                              for i in range(student_layer_num)]
                     self_out_loss = new_rkd_loss(
-                        student_all_self_outs, new_teacher_self_outs, head_nums=12)
+                        student_all_self_outs, new_teacher_self_outs, head_nums=args.split_num)
 
                     new_teacher_reps = [teacher_reps[i * layers_per_block]
                                         for i in range(student_layer_num + 1)]
@@ -2709,6 +2711,7 @@ def main():
                         tokenizer.save_vocabulary(args.output_dir)
 
                     student_model.train()
+
 
         if args.pred_distill:
             # Test mnli-mm

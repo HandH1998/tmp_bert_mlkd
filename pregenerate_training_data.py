@@ -373,7 +373,7 @@ def main():
                     docs.add_document(doc)
                     doc = []
                     doc_num += 1
-                    if doc_num % 100 == 0:
+                    if doc_num % 1000 == 0:
                         logger.info('loaded {} docs!'.format(doc_num))
                 else:
                     tokens = tokenizer.tokenize(line)
