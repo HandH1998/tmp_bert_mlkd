@@ -409,7 +409,7 @@ class BertSelfAttention(nn.Module):
         # Normalize the attention scores to probabilities.
         attention_probs = nn.Softmax(dim=-1)(attention_scores)
 
-        context_layer_=mixed_key_layer
+        context_layer_=[mixed_query_layer, mixed_key_layer, mixed_value_layer]
         # context_layer_ = torch.matmul(attention_probs, value_layer)
         # context_layer_ = context_layer_.permute(0, 2, 1, 3).contiguous()
         # new_context_layer_shape = context_layer_.size()[
