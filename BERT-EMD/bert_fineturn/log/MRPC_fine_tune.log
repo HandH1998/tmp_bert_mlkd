@@ -1,0 +1,312 @@
+06/11/2022 11:56:21 - WARNING - __main__ -   Process rank: -1, device: cuda, n_gpu: 1, distributed training: False, 16-bits training: False
+06/11/2022 11:56:21 - INFO - bert_fineturn.configuration_utils -   loading configuration file ../../model/original_pretrained_model/bert-large-uncased/config.json
+06/11/2022 11:56:21 - INFO - bert_fineturn.configuration_utils -   Model config BertConfig {
+  "_num_labels": 2,
+  "architectures": [
+    "BertForMaskedLM"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": null,
+  "do_sample": false,
+  "early_stopping": false,
+  "eos_token_ids": null,
+  "finetuning_task": "mrpc",
+  "gradient_checkpointing": false,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 1024,
+  "id2label": {
+    "0": "LABEL_0",
+    "1": "LABEL_1"
+  },
+  "initializer_range": 0.02,
+  "intermediate_size": 4096,
+  "is_decoder": false,
+  "is_encoder_decoder": false,
+  "label2id": {
+    "LABEL_0": 0,
+    "LABEL_1": 1
+  },
+  "layer_norm_eps": 1e-12,
+  "length_penalty": 1.0,
+  "max_length": 20,
+  "max_position_embeddings": 512,
+  "min_length": 0,
+  "model_type": "bert",
+  "no_repeat_ngram_size": 0,
+  "num_attention_heads": 16,
+  "num_beams": 1,
+  "num_hidden_layers": 24,
+  "num_return_sequences": 1,
+  "output_attentions": false,
+  "output_hidden_states": false,
+  "output_past": true,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "pruned_heads": {},
+  "repetition_penalty": 1.0,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0,
+  "torchscript": false,
+  "transformers_version": "4.6.0.dev0",
+  "type_vocab_size": 2,
+  "use_bfloat16": false,
+  "use_cache": true,
+  "vocab_size": 30522
+}
+
+06/11/2022 11:56:21 - INFO - bert_fineturn.tokenization_utils -   Model name '../../model/original_pretrained_model/bert-large-uncased' not found in model shortcut name list (bert-base-uncased, bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, bert-base-multilingual-cased, bert-base-chinese, bert-base-german-cased, bert-large-uncased-whole-word-masking, bert-large-cased-whole-word-masking, bert-large-uncased-whole-word-masking-finetuned-squad, bert-large-cased-whole-word-masking-finetuned-squad, bert-base-cased-finetuned-mrpc, bert-base-german-dbmdz-cased, bert-base-german-dbmdz-uncased, bert-base-finnish-cased-v1, bert-base-finnish-uncased-v1, bert-base-dutch-cased). Assuming '../../model/original_pretrained_model/bert-large-uncased' is a path, a model identifier, or url to a directory containing tokenizer files.
+06/11/2022 11:56:21 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/original_pretrained_model/bert-large-uncased/added_tokens.json. We won't load it.
+06/11/2022 11:56:21 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/original_pretrained_model/bert-large-uncased/special_tokens_map.json. We won't load it.
+06/11/2022 11:56:21 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/original_pretrained_model/bert-large-uncased/tokenizer_config.json. We won't load it.
+06/11/2022 11:56:21 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/original_pretrained_model/bert-large-uncased/vocab.txt
+06/11/2022 11:56:21 - INFO - bert_fineturn.tokenization_utils -   loading file None
+06/11/2022 11:56:21 - INFO - bert_fineturn.tokenization_utils -   loading file None
+06/11/2022 11:56:21 - INFO - bert_fineturn.tokenization_utils -   loading file None
+06/11/2022 11:56:22 - INFO - bert_fineturn.modeling_utils -   loading weights file ../../model/original_pretrained_model/bert-large-uncased/pytorch_model.bin
+06/11/2022 11:56:28 - INFO - bert_fineturn.modeling_utils -   Weights of BertForSequenceClassification not initialized from pretrained model: ['classifier.weight', 'classifier.bias']
+06/11/2022 11:56:28 - INFO - bert_fineturn.modeling_utils -   Weights from pretrained model not used in BertForSequenceClassification: ['cls.predictions.bias', 'cls.predictions.transform.dense.weight', 'cls.predictions.transform.dense.bias', 'cls.predictions.decoder.weight', 'cls.seq_relationship.weight', 'cls.seq_relationship.bias', 'cls.predictions.transform.LayerNorm.weight', 'cls.predictions.transform.LayerNorm.bias']
+06/11/2022 11:56:31 - INFO - __main__ -   Training/evaluation parameters Namespace(adam_epsilon=1e-08, cache_dir='', config_name='', data_dir='../../data/glue_data/MRPC/', device=device(type='cuda'), do_eval=True, do_lower_case=True, do_predict=False, do_train=True, eval_all_checkpoints=False, evaluate_during_training=True, fp16=False, fp16_opt_level='O1', gpu_id=0, gradient_accumulation_steps=1, learning_rate=2e-05, local_rank=-1, logging_steps=500, max_grad_norm=1.0, max_seq_length=128, max_steps=-1, model_name_or_path='../../model/original_pretrained_model/bert-large-uncased', model_type='bert', n_gpu=1, no_cuda=False, num_train_epochs=6.0, output_dir='../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/', output_mode='classification', overwrite_cache=False, overwrite_output_dir=True, per_gpu_eval_batch_size=8, per_gpu_train_batch_size=32, save_steps=1000000, seed=42, server_ip='', server_port='', task_name='mrpc', tokenizer_name='', warmup_steps=0, weight_decay=0.0)
+06/11/2022 11:56:31 - INFO - __main__ -   Creating features from dataset file at ../../data/glue_data/MRPC/
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   LOOKING AT ../../data/glue_data/MRPC/train.tsv
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   Writing example 0/3668
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   guid: train-1
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 2572 3217 5831 5496 2010 2567 1010 3183 2002 2170 1000 1996 7409 1000 1010 1997 9969 4487 23809 3436 2010 3350 1012 102 7727 2000 2032 2004 2069 1000 1996 7409 1000 1010 2572 3217 5831 5496 2010 2567 1997 9969 4487 23809 3436 2010 3350 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   label: 1 (id = 1)
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   guid: train-2
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 9805 3540 11514 2050 3079 11282 2243 1005 1055 2077 4855 1996 4677 2000 3647 4576 1999 2687 2005 1002 1016 1012 1019 4551 1012 102 9805 3540 11514 2050 4149 11282 2243 1005 1055 1999 2786 2005 1002 6353 2509 2454 1998 2853 2009 2000 3647 4576 2005 1002 1015 1012 1022 4551 1999 2687 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   label: 0 (id = 0)
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   guid: train-3
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 2027 2018 2405 2019 15147 2006 1996 4274 2006 2238 2184 1010 5378 1996 6636 2005 5096 1010 2002 2794 1012 102 2006 2238 2184 1010 1996 2911 1005 1055 5608 2018 2405 2019 15147 2006 1996 4274 1010 5378 1996 14792 2005 5096 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   label: 1 (id = 1)
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   guid: train-4
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 2105 6021 19481 13938 2102 1010 21628 6661 2020 2039 2539 16653 1010 2030 1018 1012 1018 1003 1010 2012 1037 1002 1018 1012 5179 1010 2383 3041 2275 1037 2501 2152 1997 1037 1002 1018 1012 5401 1012 102 21628 6661 5598 2322 16653 1010 2030 1018 1012 1020 1003 1010 2000 2275 1037 2501 5494 2152 2012 1037 1002 1018 1012 5401 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   label: 0 (id = 0)
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   guid: train-5
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 1996 4518 3123 1002 1016 1012 2340 1010 2030 2055 2340 3867 1010 2000 2485 5958 2012 1002 2538 1012 4868 2006 1996 2047 2259 4518 3863 1012 102 18720 1004 1041 13058 1012 6661 5598 1002 1015 1012 6191 2030 1022 3867 2000 1002 2538 1012 6021 2006 1996 2047 2259 4518 3863 2006 5958 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:56:31 - INFO - bert_fineturn.data_processor.glue -   label: 1 (id = 1)
+06/11/2022 11:56:35 - INFO - __main__ -   Saving features into cached file ../../data/glue_data/MRPC/cached_train_bert-large-uncased_128_mrpc
+06/11/2022 11:56:35 - INFO - __main__ -   ***** Running training *****
+06/11/2022 11:56:35 - INFO - __main__ -     Num examples = 3668
+06/11/2022 11:56:35 - INFO - __main__ -     Num Epochs = 6
+06/11/2022 11:56:35 - INFO - __main__ -     Instantaneous batch size per GPU = 32
+06/11/2022 11:56:35 - INFO - __main__ -     Total train batch size (w. parallel, distributed & accumulation) = 32
+06/11/2022 11:56:35 - INFO - __main__ -     Gradient Accumulation steps = 1
+06/11/2022 11:56:35 - INFO - __main__ -     Total optimization steps = 690
+06/11/2022 11:56:35 - INFO - __main__ -     Continuing training from checkpoint, will skip to saved global_step
+06/11/2022 11:56:35 - INFO - __main__ -     Continuing training from epoch 0
+06/11/2022 11:56:35 - INFO - __main__ -     Continuing training from global step 0
+06/11/2022 11:56:35 - INFO - __main__ -     Will skip the first 0 steps in the first epoch
+06/11/2022 11:56:35 - INFO - __main__ -   epoch 0/6
+/root/autodl-tmp/tiny_bert/BERT-EMD/bert_fineturn/optimization.py:155: UserWarning: This overload of add_ is deprecated:
+	add_(Number alpha, Tensor other)
+Consider using one of the following signatures instead:
+	add_(Tensor other, *, Number alpha) (Triggered internally at  /opt/conda/conda-bld/pytorch_1639180594101/work/torch/csrc/utils/python_arg_parser.cpp:1050.)
+  exp_avg.mul_(beta1).add_(1.0 - beta1, grad)
+06/11/2022 11:57:16 - INFO - __main__ -   epoch 1/6
+06/11/2022 11:57:56 - INFO - __main__ -   epoch 2/6
+06/11/2022 11:58:36 - INFO - __main__ -   epoch 3/6
+06/11/2022 11:59:16 - INFO - __main__ -   epoch 4/6
+06/11/2022 11:59:30 - INFO - __main__ -   Creating features from dataset file at ../../data/glue_data/MRPC/
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   Writing example 0/408
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   guid: dev-1
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 2002 2056 1996 9440 2121 7903 2063 11345 2449 2987 1005 1056 4906 1996 2194 1005 1055 2146 1011 2744 3930 5656 1012 102 1000 1996 9440 2121 7903 2063 11345 2449 2515 2025 4906 2256 2146 1011 2744 3930 5656 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   label: 1 (id = 1)
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   guid: dev-2
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 20201 22948 2056 10958 19053 4140 6283 1996 8956 6939 1998 2246 2830 2000 2478 2010 2146 2086 1997 2731 1999 1996 2162 1012 102 2010 2564 2056 2002 2001 1000 2531 3867 2369 2577 5747 1000 1998 2246 2830 2000 2478 2010 2086 1997 2731 1999 1996 2162 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   label: 0 (id = 0)
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   guid: dev-3
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 1996 7922 2001 2012 12904 1012 6227 18371 2114 1996 18371 1010 4257 2006 1996 5219 1010 1998 2012 1015 1012 27054 2487 2114 1996 5364 23151 2278 1010 2036 4257 1012 102 1996 7922 2001 2012 12904 1012 6275 18371 16545 2100 1027 1010 8990 4257 2006 1996 5219 1010 1998 2012 1015 1012 23090 2487 2114 1996 5364 23151 2278 10381 2546 1027 1010 2091 1014 1012 1015 3867 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   label: 0 (id = 0)
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   guid: dev-4
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 1996 10028 1011 25022 2080 2003 3403 2127 2255 2000 5630 2065 2009 2097 2203 5668 2063 1037 4018 1012 102 1996 10028 1011 25022 2080 2623 9317 2008 2009 2097 5630 1999 2255 3251 2000 2203 5668 2063 1037 4018 2077 1996 27419 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   label: 1 (id = 1)
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   guid: dev-5
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 2053 5246 2031 2042 2275 2005 1996 2942 2030 1996 4735 3979 1012 102 2053 5246 2031 2042 2275 2005 1996 4735 2030 2942 3572 1010 2021 17137 3051 2038 12254 2025 5905 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:59:30 - INFO - bert_fineturn.data_processor.glue -   label: 0 (id = 0)
+06/11/2022 11:59:30 - INFO - __main__ -   Saving features into cached file ../../data/glue_data/MRPC/cached_dev_bert-large-uncased_128_mrpc
+06/11/2022 11:59:30 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 11:59:30 - INFO - __main__ -     Num examples = 408
+06/11/2022 11:59:30 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/51 [00:00<?, ?it/s]Evaluating:   8%|▊         | 4/51 [00:00<00:01, 36.19it/s]Evaluating:  16%|█▌        | 8/51 [00:00<00:01, 36.02it/s]Evaluating:  24%|██▎       | 12/51 [00:00<00:01, 35.91it/s]Evaluating:  31%|███▏      | 16/51 [00:00<00:00, 35.89it/s]Evaluating:  39%|███▉      | 20/51 [00:00<00:00, 35.85it/s]Evaluating:  47%|████▋     | 24/51 [00:00<00:00, 35.63it/s]Evaluating:  55%|█████▍    | 28/51 [00:00<00:00, 35.73it/s]Evaluating:  63%|██████▎   | 32/51 [00:00<00:00, 35.75it/s]Evaluating:  71%|███████   | 36/51 [00:01<00:00, 35.81it/s]Evaluating:  78%|███████▊  | 40/51 [00:01<00:00, 35.83it/s]Evaluating:  86%|████████▋ | 44/51 [00:01<00:00, 35.85it/s]Evaluating:  94%|█████████▍| 48/51 [00:01<00:00, 35.91it/s]Evaluating: 100%|██████████| 51/51 [00:01<00:00, 35.82it/s]
+06/11/2022 11:59:31 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 11:59:31 - INFO - __main__ -     acc = 0.8455882352941176
+06/11/2022 11:59:31 - INFO - __main__ -     acc_and_f1 = 0.8702064715702642
+06/11/2022 11:59:31 - INFO - __main__ -     f1 = 0.8948247078464107
+/root/miniconda3/envs/TinyBert/lib/python3.7/site-packages/torch/optim/lr_scheduler.py:247: UserWarning: To get the last learning rate computed by the scheduler, please use `get_last_lr()`.
+  warnings.warn("To get the last learning rate computed by the scheduler, "
+{"eval_acc": 0.8455882352941176, "eval_f1": 0.8948247078464107, "eval_acc_and_f1": 0.8702064715702642, "learning_rate": 5.507246376811595e-06, "loss": 0.2919790075831115, "step": 500}
+06/11/2022 11:59:57 - INFO - __main__ -   epoch 5/6
+06/11/2022 12:00:37 - INFO - __main__ -    global_step = 690, average loss = 0.22139722147916
+06/11/2022 12:00:37 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/
+06/11/2022 12:00:37 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/config.json
+06/11/2022 12:00:38 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/pytorch_model.bin
+06/11/2022 12:00:38 - INFO - bert_fineturn.configuration_utils -   loading configuration file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/config.json
+06/11/2022 12:00:38 - INFO - bert_fineturn.configuration_utils -   Model config BertConfig {
+  "_num_labels": 2,
+  "architectures": [
+    "BertForSequenceClassification"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": null,
+  "do_sample": false,
+  "early_stopping": false,
+  "eos_token_ids": null,
+  "finetuning_task": "mrpc",
+  "gradient_checkpointing": false,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 1024,
+  "id2label": {
+    "0": "LABEL_0",
+    "1": "LABEL_1"
+  },
+  "initializer_range": 0.02,
+  "intermediate_size": 4096,
+  "is_decoder": false,
+  "is_encoder_decoder": false,
+  "label2id": {
+    "LABEL_0": 0,
+    "LABEL_1": 1
+  },
+  "layer_norm_eps": 1e-12,
+  "length_penalty": 1.0,
+  "max_length": 20,
+  "max_position_embeddings": 512,
+  "min_length": 0,
+  "model_type": "bert",
+  "no_repeat_ngram_size": 0,
+  "num_attention_heads": 16,
+  "num_beams": 1,
+  "num_hidden_layers": 24,
+  "num_return_sequences": 1,
+  "output_attentions": false,
+  "output_hidden_states": false,
+  "output_past": true,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "pruned_heads": {},
+  "repetition_penalty": 1.0,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0,
+  "torchscript": false,
+  "transformers_version": "4.6.0.dev0",
+  "type_vocab_size": 2,
+  "use_bfloat16": false,
+  "use_cache": true,
+  "vocab_size": 30522
+}
+
+06/11/2022 12:00:38 - INFO - bert_fineturn.modeling_utils -   loading weights file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/pytorch_model.bin
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   Model name '../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/' not found in model shortcut name list (bert-base-uncased, bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, bert-base-multilingual-cased, bert-base-chinese, bert-base-german-cased, bert-large-uncased-whole-word-masking, bert-large-cased-whole-word-masking, bert-large-uncased-whole-word-masking-finetuned-squad, bert-large-cased-whole-word-masking-finetuned-squad, bert-base-cased-finetuned-mrpc, bert-base-german-dbmdz-cased, bert-base-german-dbmdz-uncased, bert-base-finnish-cased-v1, bert-base-finnish-uncased-v1, bert-base-dutch-cased). Assuming '../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/' is a path, a model identifier, or url to a directory containing tokenizer files.
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/added_tokens.json. We won't load it.
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/vocab.txt
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   loading file None
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/special_tokens_map.json
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/tokenizer_config.json
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   Model name '../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/' not found in model shortcut name list (bert-base-uncased, bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, bert-base-multilingual-cased, bert-base-chinese, bert-base-german-cased, bert-large-uncased-whole-word-masking, bert-large-cased-whole-word-masking, bert-large-uncased-whole-word-masking-finetuned-squad, bert-large-cased-whole-word-masking-finetuned-squad, bert-base-cased-finetuned-mrpc, bert-base-german-dbmdz-cased, bert-base-german-dbmdz-uncased, bert-base-finnish-cased-v1, bert-base-finnish-uncased-v1, bert-base-dutch-cased). Assuming '../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/' is a path, a model identifier, or url to a directory containing tokenizer files.
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/added_tokens.json. We won't load it.
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/vocab.txt
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   loading file None
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/special_tokens_map.json
+06/11/2022 12:00:44 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/tokenizer_config.json
+06/11/2022 12:00:44 - INFO - __main__ -   Evaluate the following checkpoints: ['../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/']
+06/11/2022 12:00:44 - INFO - bert_fineturn.configuration_utils -   loading configuration file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/config.json
+06/11/2022 12:00:44 - INFO - bert_fineturn.configuration_utils -   Model config BertConfig {
+  "_num_labels": 2,
+  "architectures": [
+    "BertForSequenceClassification"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": null,
+  "do_sample": false,
+  "early_stopping": false,
+  "eos_token_ids": null,
+  "finetuning_task": "mrpc",
+  "gradient_checkpointing": false,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 1024,
+  "id2label": {
+    "0": "LABEL_0",
+    "1": "LABEL_1"
+  },
+  "initializer_range": 0.02,
+  "intermediate_size": 4096,
+  "is_decoder": false,
+  "is_encoder_decoder": false,
+  "label2id": {
+    "LABEL_0": 0,
+    "LABEL_1": 1
+  },
+  "layer_norm_eps": 1e-12,
+  "length_penalty": 1.0,
+  "max_length": 20,
+  "max_position_embeddings": 512,
+  "min_length": 0,
+  "model_type": "bert",
+  "no_repeat_ngram_size": 0,
+  "num_attention_heads": 16,
+  "num_beams": 1,
+  "num_hidden_layers": 24,
+  "num_return_sequences": 1,
+  "output_attentions": false,
+  "output_hidden_states": false,
+  "output_past": true,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "pruned_heads": {},
+  "repetition_penalty": 1.0,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0,
+  "torchscript": false,
+  "transformers_version": "4.6.0.dev0",
+  "type_vocab_size": 2,
+  "use_bfloat16": false,
+  "use_cache": true,
+  "vocab_size": 30522
+}
+
+06/11/2022 12:00:44 - INFO - bert_fineturn.modeling_utils -   loading weights file ../../model/BERT-EMD/fine-tuned_pretrained_model/MRPC/on_original_data/pytorch_model.bin
+06/11/2022 12:00:50 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/MRPC/cached_dev_bert-large-uncased_128_mrpc
+06/11/2022 12:00:50 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:00:50 - INFO - __main__ -     Num examples = 408
+06/11/2022 12:00:50 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/51 [00:00<?, ?it/s]Evaluating:   8%|▊         | 4/51 [00:00<00:01, 36.02it/s]Evaluating:  16%|█▌        | 8/51 [00:00<00:01, 35.84it/s]Evaluating:  24%|██▎       | 12/51 [00:00<00:01, 35.78it/s]Evaluating:  31%|███▏      | 16/51 [00:00<00:00, 35.80it/s]Evaluating:  39%|███▉      | 20/51 [00:00<00:00, 35.79it/s]Evaluating:  47%|████▋     | 24/51 [00:00<00:00, 35.83it/s]Evaluating:  55%|█████▍    | 28/51 [00:00<00:00, 35.84it/s]Evaluating:  63%|██████▎   | 32/51 [00:00<00:00, 35.87it/s]Evaluating:  71%|███████   | 36/51 [00:01<00:00, 35.88it/s]Evaluating:  78%|███████▊  | 40/51 [00:01<00:00, 35.87it/s]Evaluating:  86%|████████▋ | 44/51 [00:01<00:00, 35.89it/s]Evaluating:  94%|█████████▍| 48/51 [00:01<00:00, 35.89it/s]Evaluating: 100%|██████████| 51/51 [00:01<00:00, 35.83it/s]
+06/11/2022 12:00:52 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:00:52 - INFO - __main__ -     acc = 0.8504901960784313
+06/11/2022 12:00:52 - INFO - __main__ -     acc_and_f1 = 0.8734624155264822
+06/11/2022 12:00:52 - INFO - __main__ -     f1 = 0.896434634974533

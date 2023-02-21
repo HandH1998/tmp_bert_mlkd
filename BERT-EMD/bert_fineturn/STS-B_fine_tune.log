@@ -1,0 +1,300 @@
+D:\ProgramData\Anaconda3\envs\TinyBERT\lib\site-packages\numpy\_distributor_init.py:32: UserWarning: loaded more than 1 DLL from .libs:
+D:\ProgramData\Anaconda3\envs\TinyBERT\lib\site-packages\numpy\.libs\libopenblas.PYQHXLVVQ7VESDPUVUADXEVJOBGHJPAY.gfortran-win_amd64.dll
+D:\ProgramData\Anaconda3\envs\TinyBERT\lib\site-packages\numpy\.libs\libopenblas.XWYDX2IKJW2NMTWSFYNGFUWKQU3LYTCZ.gfortran-win_amd64.dll
+  stacklevel=1)
+2021-11-21 18:10:47.796346: I tensorflow/stream_executor/platform/default/dso_loader.cc:53] Successfully opened dynamic library cudart64_110.dll
+11/21/2021 18:10:49 - WARNING - __main__ -   Process rank: -1, device: cuda, n_gpu: 1, distributed training: False, 16-bits training: False
+11/21/2021 18:10:49 - INFO - bert_fineturn.configuration_utils -   loading configuration file ../../model/original_pretrained_model/config.json
+11/21/2021 18:10:49 - INFO - bert_fineturn.configuration_utils -   Model config BertConfig {
+  "_num_labels": 1,
+  "architectures": null,
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": null,
+  "do_sample": false,
+  "early_stopping": false,
+  "eos_token_ids": null,
+  "finetuning_task": "sts-b",
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 768,
+  "id2label": {
+    "0": "LABEL_0"
+  },
+  "initializer_range": 0.02,
+  "intermediate_size": 3072,
+  "is_decoder": false,
+  "is_encoder_decoder": false,
+  "label2id": {
+    "LABEL_0": 0
+  },
+  "layer_norm_eps": 1e-12,
+  "length_penalty": 1.0,
+  "max_length": 20,
+  "max_position_embeddings": 512,
+  "min_length": 0,
+  "model_type": "bert",
+  "no_repeat_ngram_size": 0,
+  "num_attention_heads": 12,
+  "num_beams": 1,
+  "num_hidden_layers": 12,
+  "num_return_sequences": 1,
+  "output_attentions": false,
+  "output_hidden_states": false,
+  "output_past": true,
+  "pad_token_id": null,
+  "pruned_heads": {},
+  "repetition_penalty": 1.0,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0,
+  "torchscript": false,
+  "type_vocab_size": 2,
+  "use_bfloat16": false,
+  "vocab_size": 30522
+}
+
+11/21/2021 18:10:49 - INFO - bert_fineturn.tokenization_utils -   Model name '../../model/original_pretrained_model/' not found in model shortcut name list (bert-base-uncased, bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, bert-base-multilingual-cased, bert-base-chinese, bert-base-german-cased, bert-large-uncased-whole-word-masking, bert-large-cased-whole-word-masking, bert-large-uncased-whole-word-masking-finetuned-squad, bert-large-cased-whole-word-masking-finetuned-squad, bert-base-cased-finetuned-mrpc, bert-base-german-dbmdz-cased, bert-base-german-dbmdz-uncased, bert-base-finnish-cased-v1, bert-base-finnish-uncased-v1, bert-base-dutch-cased). Assuming '../../model/original_pretrained_model/' is a path, a model identifier, or url to a directory containing tokenizer files.
+11/21/2021 18:10:49 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/original_pretrained_model/added_tokens.json. We won't load it.
+11/21/2021 18:10:49 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/original_pretrained_model/special_tokens_map.json. We won't load it.
+11/21/2021 18:10:49 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/original_pretrained_model/tokenizer_config.json. We won't load it.
+11/21/2021 18:10:49 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/original_pretrained_model/vocab.txt
+11/21/2021 18:10:49 - INFO - bert_fineturn.tokenization_utils -   loading file None
+11/21/2021 18:10:49 - INFO - bert_fineturn.tokenization_utils -   loading file None
+11/21/2021 18:10:49 - INFO - bert_fineturn.tokenization_utils -   loading file None
+11/21/2021 18:10:49 - INFO - bert_fineturn.modeling_utils -   loading weights file ../../model/original_pretrained_model/pytorch_model.bin
+11/21/2021 18:10:51 - INFO - bert_fineturn.modeling_utils -   Weights of BertForSequenceClassification not initialized from pretrained model: ['classifier.weight', 'classifier.bias']
+11/21/2021 18:10:51 - INFO - bert_fineturn.modeling_utils -   Weights from pretrained model not used in BertForSequenceClassification: ['cls.predictions.bias', 'cls.predictions.transform.dense.weight', 'cls.predictions.transform.dense.bias', 'cls.predictions.decoder.weight', 'cls.seq_relationship.weight', 'cls.seq_relationship.bias', 'cls.predictions.transform.LayerNorm.weight', 'cls.predictions.transform.LayerNorm.bias']
+11/21/2021 18:10:51 - INFO - __main__ -   Training/evaluation parameters Namespace(adam_epsilon=1e-08, cache_dir='', config_name='', data_dir='../../data/glue_data/STS-B/', device=device(type='cuda'), do_eval=True, do_lower_case=True, do_predict=False, do_train=True, eval_all_checkpoints=False, evaluate_during_training=True, fp16=False, fp16_opt_level='O1', gradient_accumulation_steps=1, learning_rate=2e-05, local_rank=-1, logging_steps=500, max_grad_norm=1.0, max_seq_length=128, max_steps=-1, model_name_or_path='../../model/original_pretrained_model/', model_type='bert', n_gpu=1, no_cuda=False, num_train_epochs=8.0, output_dir='../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/', output_mode='regression', overwrite_cache=False, overwrite_output_dir=True, per_gpu_eval_batch_size=8, per_gpu_train_batch_size=32, save_steps=100, seed=42, server_ip='', server_port='', task_name='sts-b', tokenizer_name='', warmup_steps=0, weight_decay=0.0)
+11/21/2021 18:10:51 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/STS-B/cached_train_original_pretrained_model_128_sts-b
+11/21/2021 18:10:52 - INFO - __main__ -   ***** Running training *****
+11/21/2021 18:10:52 - INFO - __main__ -     Num examples = 5749
+11/21/2021 18:10:52 - INFO - __main__ -     Num Epochs = 8
+11/21/2021 18:10:52 - INFO - __main__ -     Instantaneous batch size per GPU = 32
+11/21/2021 18:10:52 - INFO - __main__ -     Total train batch size (w. parallel, distributed & accumulation) = 32
+11/21/2021 18:10:52 - INFO - __main__ -     Gradient Accumulation steps = 1
+11/21/2021 18:10:52 - INFO - __main__ -     Total optimization steps = 1440
+11/21/2021 18:10:52 - INFO - __main__ -     Continuing training from checkpoint, will skip to saved global_step
+11/21/2021 18:10:52 - INFO - __main__ -     Continuing training from epoch 0
+11/21/2021 18:10:52 - INFO - __main__ -     Continuing training from global step 0
+11/21/2021 18:10:52 - INFO - __main__ -     Will skip the first 0 steps in the first epoch
+11/21/2021 18:10:52 - INFO - __main__ -   epoch 0/8
+D:\zy\tiny_bert\BERT-EMD\bert_fineturn\optimization.py:155: UserWarning: This overload of add_ is deprecated:
+	add_(Number alpha, Tensor other)
+Consider using one of the following signatures instead:
+	add_(Tensor other, *, Number alpha) (Triggered internally at  ..\torch\csrc\utils\python_arg_parser.cpp:1050.)
+  exp_avg.mul_(beta1).add_(1.0 - beta1, grad)
+11/21/2021 18:11:19 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-100\config.json
+11/21/2021 18:11:19 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-100\pytorch_model.bin
+11/21/2021 18:11:19 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-100
+11/21/2021 18:11:21 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-100
+11/21/2021 18:11:41 - INFO - __main__ -   epoch 1/8
+11/21/2021 18:11:46 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-200\config.json
+11/21/2021 18:11:47 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-200\pytorch_model.bin
+11/21/2021 18:11:47 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-200
+11/21/2021 18:11:48 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-200
+11/21/2021 18:12:13 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-300\config.json
+11/21/2021 18:12:14 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-300\pytorch_model.bin
+11/21/2021 18:12:14 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-300
+11/21/2021 18:12:15 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-300
+11/21/2021 18:12:30 - INFO - __main__ -   epoch 2/8
+11/21/2021 18:12:41 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-400\config.json
+11/21/2021 18:12:41 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-400\pytorch_model.bin
+11/21/2021 18:12:41 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-400
+11/21/2021 18:12:42 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-400
+11/21/2021 18:13:08 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/STS-B/cached_dev_original_pretrained_model_128_sts-b
+11/21/2021 18:13:08 - INFO - __main__ -   ***** Running evaluation  *****
+11/21/2021 18:13:08 - INFO - __main__ -     Num examples = 1500
+11/21/2021 18:13:08 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/188 [00:00<?, ?it/s]Evaluating:   3%|¨†         | 5/188 [00:00<00:04, 44.36it/s]Evaluating:   5%|¨„         | 10/188 [00:00<00:04, 44.24it/s]Evaluating:   8%|¨‚         | 15/188 [00:00<00:03, 44.05it/s]Evaluating:  11%|¨€         | 20/188 [00:00<00:03, 44.14it/s]Evaluating:  13%|¨€¨†        | 25/188 [00:00<00:03, 44.09it/s]Evaluating:  16%|¨€¨„        | 30/188 [00:00<00:03, 44.06it/s]Evaluating:  19%|¨€¨‚        | 35/188 [00:00<00:03, 44.15it/s]Evaluating:  21%|¨€¨€¨‡       | 40/188 [00:00<00:03, 44.10it/s]Evaluating:  24%|¨€¨€¨…       | 45/188 [00:01<00:03, 44.06it/s]Evaluating:  27%|¨€¨€¨ƒ       | 50/188 [00:01<00:03, 44.03it/s]Evaluating:  29%|¨€¨€¨       | 55/188 [00:01<00:03, 43.90it/s]Evaluating:  32%|¨€¨€¨€¨‡      | 60/188 [00:01<00:02, 43.93it/s]Evaluating:  35%|¨€¨€¨€¨…      | 65/188 [00:01<00:02, 44.06it/s]Evaluating:  37%|¨€¨€¨€¨ƒ      | 70/188 [00:01<00:02, 44.03it/s]Evaluating:  40%|¨€¨€¨€¨      | 75/188 [00:01<00:02, 44.01it/s]Evaluating:  43%|¨€¨€¨€¨€¨†     | 80/188 [00:01<00:02, 44.12it/s]Evaluating:  45%|¨€¨€¨€¨€¨„     | 85/188 [00:01<00:02, 43.96it/s]Evaluating:  48%|¨€¨€¨€¨€¨‚     | 90/188 [00:02<00:02, 44.08it/s]Evaluating:  51%|¨€¨€¨€¨€¨€     | 95/188 [00:02<00:02, 44.05it/s]Evaluating:  53%|¨€¨€¨€¨€¨€¨†    | 100/188 [00:02<00:01, 44.03it/s]Evaluating:  56%|¨€¨€¨€¨€¨€¨„    | 105/188 [00:02<00:01, 43.90it/s]Evaluating:  59%|¨€¨€¨€¨€¨€¨‚    | 110/188 [00:02<00:01, 43.92it/s]Evaluating:  61%|¨€¨€¨€¨€¨€¨€    | 115/188 [00:02<00:01, 44.06it/s]Evaluating:  64%|¨€¨€¨€¨€¨€¨€¨…   | 120/188 [00:02<00:01, 43.92it/s]Evaluating:  66%|¨€¨€¨€¨€¨€¨€¨ƒ   | 125/188 [00:02<00:01, 43.82it/s]Evaluating:  69%|¨€¨€¨€¨€¨€¨€¨   | 130/188 [00:02<00:01, 43.86it/s]Evaluating:  72%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 135/188 [00:03<00:01, 43.90it/s]Evaluating:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 140/188 [00:03<00:01, 44.04it/s]Evaluating:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 145/188 [00:03<00:00, 43.90it/s]Evaluating:  80%|¨€¨€¨€¨€¨€¨€¨€¨  | 150/188 [00:03<00:00, 43.93it/s]Evaluating:  82%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 155/188 [00:03<00:00, 43.94it/s]Evaluating:  85%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 160/188 [00:03<00:00, 43.84it/s]Evaluating:  88%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 165/188 [00:03<00:00, 43.99it/s]Evaluating:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 170/188 [00:03<00:00, 43.87it/s]Evaluating:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 175/188 [00:03<00:00, 43.91it/s]Evaluating:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 180/188 [00:04<00:00, 44.04it/s]Evaluating:  98%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 185/188 [00:04<00:00, 44.02it/s]Evaluating: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 188/188 [00:04<00:00, 44.07it/s]
+11/21/2021 18:13:12 - INFO - __main__ -   ***** Eval results  *****
+11/21/2021 18:13:12 - INFO - __main__ -     corr = 0.8862789692177331
+11/21/2021 18:13:12 - INFO - __main__ -     pearson = 0.8880416757826785
+11/21/2021 18:13:12 - INFO - __main__ -     spearmanr = 0.8845162626527877
+D:\ProgramData\Anaconda3\envs\TinyBERT\lib\site-packages\torch\optim\lr_scheduler.py:247: UserWarning: To get the last learning rate computed by the scheduler, please use `get_last_lr()`.
+  warnings.warn("To get the last learning rate computed by the scheduler, "
+{"eval_pearson": 0.8880416757826785, "eval_spearmanr": 0.8845162626527877, "eval_corr": 0.8862789692177331, "learning_rate": 1.3055555555555557e-05, "loss": 0.7856255301237106, "step": 500}
+11/21/2021 18:13:12 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-500\config.json
+11/21/2021 18:13:13 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-500\pytorch_model.bin
+11/21/2021 18:13:13 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-500
+11/21/2021 18:13:14 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-500
+11/21/2021 18:13:24 - INFO - __main__ -   epoch 3/8
+11/21/2021 18:13:40 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-600\config.json
+11/21/2021 18:13:40 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-600\pytorch_model.bin
+11/21/2021 18:13:40 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-600
+11/21/2021 18:13:41 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-600
+11/21/2021 18:14:07 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-700\config.json
+11/21/2021 18:14:08 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-700\pytorch_model.bin
+11/21/2021 18:14:08 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-700
+11/21/2021 18:14:09 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-700
+11/21/2021 18:14:14 - INFO - __main__ -   epoch 4/8
+11/21/2021 18:14:34 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-800\config.json
+11/21/2021 18:14:35 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-800\pytorch_model.bin
+11/21/2021 18:14:35 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-800
+11/21/2021 18:14:36 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-800
+11/21/2021 18:15:02 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-900\config.json
+11/21/2021 18:15:02 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-900\pytorch_model.bin
+11/21/2021 18:15:02 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-900
+11/21/2021 18:15:03 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-900
+11/21/2021 18:15:03 - INFO - __main__ -   epoch 5/8
+11/21/2021 18:15:29 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/STS-B/cached_dev_original_pretrained_model_128_sts-b
+11/21/2021 18:15:29 - INFO - __main__ -   ***** Running evaluation  *****
+11/21/2021 18:15:29 - INFO - __main__ -     Num examples = 1500
+11/21/2021 18:15:29 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/188 [00:00<?, ?it/s]Evaluating:   3%|¨†         | 5/188 [00:00<00:04, 44.76it/s]Evaluating:   5%|¨„         | 10/188 [00:00<00:04, 44.41it/s]Evaluating:   8%|¨‚         | 15/188 [00:00<00:03, 44.39it/s]Evaluating:  11%|¨€         | 20/188 [00:00<00:03, 44.27it/s]Evaluating:  13%|¨€¨†        | 25/188 [00:00<00:03, 44.18it/s]Evaluating:  16%|¨€¨„        | 30/188 [00:00<00:03, 44.12it/s]Evaluating:  19%|¨€¨‚        | 35/188 [00:00<00:03, 44.08it/s]Evaluating:  21%|¨€¨€¨‡       | 40/188 [00:00<00:03, 44.05it/s]Evaluating:  24%|¨€¨€¨…       | 45/188 [00:01<00:03, 43.91it/s]Evaluating:  27%|¨€¨€¨ƒ       | 50/188 [00:01<00:03, 43.93it/s]Evaluating:  29%|¨€¨€¨       | 55/188 [00:01<00:03, 43.83it/s]Evaluating:  32%|¨€¨€¨€¨‡      | 60/188 [00:01<00:02, 43.87it/s]Evaluating:  35%|¨€¨€¨€¨…      | 65/188 [00:01<00:02, 43.90it/s]Evaluating:  37%|¨€¨€¨€¨ƒ      | 70/188 [00:01<00:02, 43.92it/s]Evaluating:  40%|¨€¨€¨€¨      | 75/188 [00:01<00:02, 43.94it/s]Evaluating:  43%|¨€¨€¨€¨€¨†     | 80/188 [00:01<00:02, 43.73it/s]Evaluating:  45%|¨€¨€¨€¨€¨„     | 85/188 [00:01<00:02, 43.80it/s]Evaluating:  48%|¨€¨€¨€¨€¨‚     | 90/188 [00:02<00:02, 43.85it/s]Evaluating:  51%|¨€¨€¨€¨€¨€     | 95/188 [00:02<00:02, 43.77it/s]Evaluating:  53%|¨€¨€¨€¨€¨€¨†    | 100/188 [00:02<00:02, 43.72it/s]Evaluating:  56%|¨€¨€¨€¨€¨€¨„    | 105/188 [00:02<00:01, 43.80it/s]Evaluating:  59%|¨€¨€¨€¨€¨€¨‚    | 110/188 [00:02<00:01, 43.85it/s]Evaluating:  61%|¨€¨€¨€¨€¨€¨€    | 115/188 [00:02<00:01, 43.89it/s]Evaluating:  64%|¨€¨€¨€¨€¨€¨€¨…   | 120/188 [00:02<00:01, 43.80it/s]Evaluating:  66%|¨€¨€¨€¨€¨€¨€¨ƒ   | 125/188 [00:02<00:01, 43.85it/s]Evaluating:  69%|¨€¨€¨€¨€¨€¨€¨   | 130/188 [00:02<00:01, 43.78it/s]Evaluating:  72%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 135/188 [00:03<00:01, 43.95it/s]Evaluating:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 140/188 [00:03<00:01, 43.84it/s]Evaluating:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 145/188 [00:03<00:00, 43.88it/s]Evaluating:  80%|¨€¨€¨€¨€¨€¨€¨€¨  | 150/188 [00:03<00:00, 43.80it/s]Evaluating:  82%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 155/188 [00:03<00:00, 43.85it/s]Evaluating:  85%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 160/188 [00:03<00:00, 43.89it/s]Evaluating:  88%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 165/188 [00:03<00:00, 43.91it/s]Evaluating:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 170/188 [00:03<00:00, 43.82it/s]Evaluating:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 175/188 [00:03<00:00, 43.87it/s]Evaluating:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 180/188 [00:04<00:00, 43.90it/s]Evaluating:  98%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 185/188 [00:04<00:00, 43.92it/s]Evaluating: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 188/188 [00:04<00:00, 43.97it/s]
+11/21/2021 18:15:33 - INFO - __main__ -   ***** Eval results  *****
+11/21/2021 18:15:33 - INFO - __main__ -     corr = 0.886618044753491
+11/21/2021 18:15:33 - INFO - __main__ -     pearson = 0.8873935625949086
+11/21/2021 18:15:33 - INFO - __main__ -     spearmanr = 0.8858425269120735
+{"eval_pearson": 0.8873935625949086, "eval_spearmanr": 0.8858425269120735, "eval_corr": 0.886618044753491, "learning_rate": 6.111111111111112e-06, "loss": 0.1922682991474867, "step": 1000}
+11/21/2021 18:15:33 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1000\config.json
+11/21/2021 18:15:34 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1000\pytorch_model.bin
+11/21/2021 18:15:34 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1000
+11/21/2021 18:15:35 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1000
+11/21/2021 18:15:56 - INFO - __main__ -   epoch 6/8
+11/21/2021 18:16:01 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1100\config.json
+11/21/2021 18:16:01 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1100\pytorch_model.bin
+11/21/2021 18:16:01 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1100
+11/21/2021 18:16:02 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1100
+11/21/2021 18:16:28 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1200\config.json
+11/21/2021 18:16:29 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1200\pytorch_model.bin
+11/21/2021 18:16:29 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1200
+11/21/2021 18:16:30 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1200
+11/21/2021 18:16:45 - INFO - __main__ -   epoch 7/8
+11/21/2021 18:16:56 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1300\config.json
+11/21/2021 18:16:56 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1300\pytorch_model.bin
+11/21/2021 18:16:56 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1300
+11/21/2021 18:16:57 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1300
+11/21/2021 18:17:23 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1400\config.json
+11/21/2021 18:17:24 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1400\pytorch_model.bin
+11/21/2021 18:17:24 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1400
+11/21/2021 18:17:25 - INFO - __main__ -   Saving optimizer and scheduler states to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/checkpoint-1400
+11/21/2021 18:17:35 - INFO - __main__ -    global_step = 1440, average loss = 0.37340183702245766
+11/21/2021 18:17:35 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/
+11/21/2021 18:17:35 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/config.json
+11/21/2021 18:17:36 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/pytorch_model.bin
+11/21/2021 18:17:36 - INFO - bert_fineturn.configuration_utils -   loading configuration file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/config.json
+11/21/2021 18:17:36 - INFO - bert_fineturn.configuration_utils -   Model config BertConfig {
+  "_num_labels": 1,
+  "architectures": [
+    "BertForSequenceClassification"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": null,
+  "do_sample": false,
+  "early_stopping": false,
+  "eos_token_ids": null,
+  "finetuning_task": "sts-b",
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 768,
+  "id2label": {
+    "0": "LABEL_0"
+  },
+  "initializer_range": 0.02,
+  "intermediate_size": 3072,
+  "is_decoder": false,
+  "is_encoder_decoder": false,
+  "label2id": {
+    "LABEL_0": 0
+  },
+  "layer_norm_eps": 1e-12,
+  "length_penalty": 1.0,
+  "max_length": 20,
+  "max_position_embeddings": 512,
+  "min_length": 0,
+  "model_type": "bert",
+  "no_repeat_ngram_size": 0,
+  "num_attention_heads": 12,
+  "num_beams": 1,
+  "num_hidden_layers": 12,
+  "num_return_sequences": 1,
+  "output_attentions": false,
+  "output_hidden_states": false,
+  "output_past": true,
+  "pad_token_id": null,
+  "pruned_heads": {},
+  "repetition_penalty": 1.0,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0,
+  "torchscript": false,
+  "type_vocab_size": 2,
+  "use_bfloat16": false,
+  "vocab_size": 30522
+}
+
+11/21/2021 18:17:36 - INFO - bert_fineturn.modeling_utils -   loading weights file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/pytorch_model.bin
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   Model name '../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/' not found in model shortcut name list (bert-base-uncased, bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, bert-base-multilingual-cased, bert-base-chinese, bert-base-german-cased, bert-large-uncased-whole-word-masking, bert-large-cased-whole-word-masking, bert-large-uncased-whole-word-masking-finetuned-squad, bert-large-cased-whole-word-masking-finetuned-squad, bert-base-cased-finetuned-mrpc, bert-base-german-dbmdz-cased, bert-base-german-dbmdz-uncased, bert-base-finnish-cased-v1, bert-base-finnish-uncased-v1, bert-base-dutch-cased). Assuming '../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/' is a path, a model identifier, or url to a directory containing tokenizer files.
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/added_tokens.json. We won't load it.
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/vocab.txt
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   loading file None
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/special_tokens_map.json
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/tokenizer_config.json
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   Model name '../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/' not found in model shortcut name list (bert-base-uncased, bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, bert-base-multilingual-cased, bert-base-chinese, bert-base-german-cased, bert-large-uncased-whole-word-masking, bert-large-cased-whole-word-masking, bert-large-uncased-whole-word-masking-finetuned-squad, bert-large-cased-whole-word-masking-finetuned-squad, bert-base-cased-finetuned-mrpc, bert-base-german-dbmdz-cased, bert-base-german-dbmdz-uncased, bert-base-finnish-cased-v1, bert-base-finnish-uncased-v1, bert-base-dutch-cased). Assuming '../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/' is a path, a model identifier, or url to a directory containing tokenizer files.
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/added_tokens.json. We won't load it.
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/vocab.txt
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   loading file None
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/special_tokens_map.json
+11/21/2021 18:17:37 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/tokenizer_config.json
+11/21/2021 18:17:37 - INFO - __main__ -   Evaluate the following checkpoints: ['../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/']
+11/21/2021 18:17:37 - INFO - bert_fineturn.configuration_utils -   loading configuration file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/config.json
+11/21/2021 18:17:37 - INFO - bert_fineturn.configuration_utils -   Model config BertConfig {
+  "_num_labels": 1,
+  "architectures": [
+    "BertForSequenceClassification"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": null,
+  "do_sample": false,
+  "early_stopping": false,
+  "eos_token_ids": null,
+  "finetuning_task": "sts-b",
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 768,
+  "id2label": {
+    "0": "LABEL_0"
+  },
+  "initializer_range": 0.02,
+  "intermediate_size": 3072,
+  "is_decoder": false,
+  "is_encoder_decoder": false,
+  "label2id": {
+    "LABEL_0": 0
+  },
+  "layer_norm_eps": 1e-12,
+  "length_penalty": 1.0,
+  "max_length": 20,
+  "max_position_embeddings": 512,
+  "min_length": 0,
+  "model_type": "bert",
+  "no_repeat_ngram_size": 0,
+  "num_attention_heads": 12,
+  "num_beams": 1,
+  "num_hidden_layers": 12,
+  "num_return_sequences": 1,
+  "output_attentions": false,
+  "output_hidden_states": false,
+  "output_past": true,
+  "pad_token_id": null,
+  "pruned_heads": {},
+  "repetition_penalty": 1.0,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0,
+  "torchscript": false,
+  "type_vocab_size": 2,
+  "use_bfloat16": false,
+  "vocab_size": 30522
+}
+
+11/21/2021 18:17:37 - INFO - bert_fineturn.modeling_utils -   loading weights file ../../model/BERT-EMD/fine_tuned_pretrained_model/STS-B/on_original_data/pytorch_model.bin
+11/21/2021 18:17:39 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/STS-B/cached_dev_original_pretrained_model_128_sts-b
+11/21/2021 18:17:39 - INFO - __main__ -   ***** Running evaluation  *****
+11/21/2021 18:17:39 - INFO - __main__ -     Num examples = 1500
+11/21/2021 18:17:39 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/188 [00:00<?, ?it/s]Evaluating:   2%|¨‡         | 4/188 [00:00<00:04, 37.47it/s]Evaluating:   4%|¨…         | 8/188 [00:00<00:04, 37.58it/s]Evaluating:   7%|¨ƒ         | 13/188 [00:00<00:04, 38.75it/s]Evaluating:  10%|¨         | 18/188 [00:00<00:04, 40.28it/s]Evaluating:  12%|¨€¨‡        | 23/188 [00:00<00:03, 41.42it/s]Evaluating:  15%|¨€¨…        | 28/188 [00:00<00:03, 42.16it/s]Evaluating:  18%|¨€¨‚        | 33/188 [00:00<00:03, 42.80it/s]Evaluating:  20%|¨€¨€        | 38/188 [00:00<00:03, 43.25it/s]Evaluating:  23%|¨€¨€¨†       | 43/188 [00:01<00:03, 43.58it/s]Evaluating:  26%|¨€¨€¨„       | 48/188 [00:01<00:03, 43.93it/s]Evaluating:  28%|¨€¨€¨‚       | 53/188 [00:01<00:03, 43.72it/s]Evaluating:  31%|¨€¨€¨€       | 58/188 [00:01<00:02, 43.91it/s]Evaluating:  34%|¨€¨€¨€¨†      | 63/188 [00:01<00:02, 43.93it/s]Evaluating:  36%|¨€¨€¨€¨„      | 68/188 [00:01<00:02, 43.94it/s]Evaluating:  39%|¨€¨€¨€¨      | 73/188 [00:01<00:02, 44.07it/s]Evaluating:  41%|¨€¨€¨€¨€¨‡     | 78/188 [00:01<00:02, 43.92it/s]Evaluating:  44%|¨€¨€¨€¨€¨…     | 83/188 [00:01<00:02, 43.94it/s]Evaluating:  47%|¨€¨€¨€¨€¨ƒ     | 88/188 [00:02<00:02, 43.95it/s]Evaluating:  49%|¨€¨€¨€¨€¨     | 93/188 [00:02<00:02, 44.07it/s]Evaluating:  52%|¨€¨€¨€¨€¨€¨‡    | 98/188 [00:02<00:02, 43.93it/s]Evaluating:  55%|¨€¨€¨€¨€¨€¨…    | 103/188 [00:02<00:01, 43.95it/s]Evaluating:  57%|¨€¨€¨€¨€¨€¨ƒ    | 108/188 [00:02<00:01, 43.84it/s]Evaluating:  60%|¨€¨€¨€¨€¨€¨€    | 113/188 [00:02<00:01, 43.99it/s]Evaluating:  63%|¨€¨€¨€¨€¨€¨€¨†   | 118/188 [00:02<00:01, 43.99it/s]Evaluating:  65%|¨€¨€¨€¨€¨€¨€¨„   | 123/188 [00:02<00:01, 43.87it/s]Evaluating:  68%|¨€¨€¨€¨€¨€¨€¨‚   | 128/188 [00:02<00:01, 43.90it/s]Evaluating:  71%|¨€¨€¨€¨€¨€¨€¨€   | 133/188 [00:03<00:01, 43.93it/s]Evaluating:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 138/188 [00:03<00:01, 43.94it/s]Evaluating:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 143/188 [00:03<00:01, 43.95it/s]Evaluating:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 148/188 [00:03<00:00, 43.96it/s]Evaluating:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 153/188 [00:03<00:00, 43.96it/s]Evaluating:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 158/188 [00:03<00:00, 43.97it/s]Evaluating:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 163/188 [00:03<00:00, 43.97it/s]Evaluating:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨ | 168/188 [00:03<00:00, 44.09it/s]Evaluating:  92%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 173/188 [00:03<00:00, 43.94it/s]Evaluating:  95%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 178/188 [00:04<00:00, 43.95it/s]Evaluating:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 183/188 [00:04<00:00, 43.84it/s]Evaluating: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 188/188 [00:04<00:00, 44.95it/s]Evaluating: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 188/188 [00:04<00:00, 43.73it/s]
+11/21/2021 18:17:44 - INFO - __main__ -   ***** Eval results  *****
+11/21/2021 18:17:44 - INFO - __main__ -     corr = 0.8876258008088209
+11/21/2021 18:17:44 - INFO - __main__ -     pearson = 0.8887457984477122
+11/21/2021 18:17:44 - INFO - __main__ -     spearmanr = 0.8865058031699298

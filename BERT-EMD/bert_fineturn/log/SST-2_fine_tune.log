@@ -1,0 +1,393 @@
+06/11/2022 11:51:05 - WARNING - __main__ -   Process rank: -1, device: cuda, n_gpu: 1, distributed training: False, 16-bits training: False
+06/11/2022 11:51:05 - INFO - bert_fineturn.configuration_utils -   loading configuration file ../../model/original_pretrained_model/bert-large-uncased/config.json
+06/11/2022 11:51:05 - INFO - bert_fineturn.configuration_utils -   Model config BertConfig {
+  "_num_labels": 2,
+  "architectures": [
+    "BertForMaskedLM"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": null,
+  "do_sample": false,
+  "early_stopping": false,
+  "eos_token_ids": null,
+  "finetuning_task": "sst-2",
+  "gradient_checkpointing": false,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 1024,
+  "id2label": {
+    "0": "LABEL_0",
+    "1": "LABEL_1"
+  },
+  "initializer_range": 0.02,
+  "intermediate_size": 4096,
+  "is_decoder": false,
+  "is_encoder_decoder": false,
+  "label2id": {
+    "LABEL_0": 0,
+    "LABEL_1": 1
+  },
+  "layer_norm_eps": 1e-12,
+  "length_penalty": 1.0,
+  "max_length": 20,
+  "max_position_embeddings": 512,
+  "min_length": 0,
+  "model_type": "bert",
+  "no_repeat_ngram_size": 0,
+  "num_attention_heads": 16,
+  "num_beams": 1,
+  "num_hidden_layers": 24,
+  "num_return_sequences": 1,
+  "output_attentions": false,
+  "output_hidden_states": false,
+  "output_past": true,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "pruned_heads": {},
+  "repetition_penalty": 1.0,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0,
+  "torchscript": false,
+  "transformers_version": "4.6.0.dev0",
+  "type_vocab_size": 2,
+  "use_bfloat16": false,
+  "use_cache": true,
+  "vocab_size": 30522
+}
+
+06/11/2022 11:51:05 - INFO - bert_fineturn.tokenization_utils -   Model name '../../model/original_pretrained_model/bert-large-uncased' not found in model shortcut name list (bert-base-uncased, bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, bert-base-multilingual-cased, bert-base-chinese, bert-base-german-cased, bert-large-uncased-whole-word-masking, bert-large-cased-whole-word-masking, bert-large-uncased-whole-word-masking-finetuned-squad, bert-large-cased-whole-word-masking-finetuned-squad, bert-base-cased-finetuned-mrpc, bert-base-german-dbmdz-cased, bert-base-german-dbmdz-uncased, bert-base-finnish-cased-v1, bert-base-finnish-uncased-v1, bert-base-dutch-cased). Assuming '../../model/original_pretrained_model/bert-large-uncased' is a path, a model identifier, or url to a directory containing tokenizer files.
+06/11/2022 11:51:05 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/original_pretrained_model/bert-large-uncased/added_tokens.json. We won't load it.
+06/11/2022 11:51:05 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/original_pretrained_model/bert-large-uncased/special_tokens_map.json. We won't load it.
+06/11/2022 11:51:05 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/original_pretrained_model/bert-large-uncased/tokenizer_config.json. We won't load it.
+06/11/2022 11:51:05 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/original_pretrained_model/bert-large-uncased/vocab.txt
+06/11/2022 11:51:05 - INFO - bert_fineturn.tokenization_utils -   loading file None
+06/11/2022 11:51:05 - INFO - bert_fineturn.tokenization_utils -   loading file None
+06/11/2022 11:51:05 - INFO - bert_fineturn.tokenization_utils -   loading file None
+06/11/2022 11:51:06 - INFO - bert_fineturn.modeling_utils -   loading weights file ../../model/original_pretrained_model/bert-large-uncased/pytorch_model.bin
+06/11/2022 11:51:12 - INFO - bert_fineturn.modeling_utils -   Weights of BertForSequenceClassification not initialized from pretrained model: ['classifier.weight', 'classifier.bias']
+06/11/2022 11:51:12 - INFO - bert_fineturn.modeling_utils -   Weights from pretrained model not used in BertForSequenceClassification: ['cls.predictions.bias', 'cls.predictions.transform.dense.weight', 'cls.predictions.transform.dense.bias', 'cls.predictions.decoder.weight', 'cls.seq_relationship.weight', 'cls.seq_relationship.bias', 'cls.predictions.transform.LayerNorm.weight', 'cls.predictions.transform.LayerNorm.bias']
+06/11/2022 11:51:15 - INFO - __main__ -   Training/evaluation parameters Namespace(adam_epsilon=1e-08, cache_dir='', config_name='', data_dir='../../data/glue_data/SST-2/', device=device(type='cuda'), do_eval=True, do_lower_case=True, do_predict=False, do_train=True, eval_all_checkpoints=False, evaluate_during_training=True, fp16=False, fp16_opt_level='O1', gpu_id=1, gradient_accumulation_steps=1, learning_rate=2e-05, local_rank=-1, logging_steps=500, max_grad_norm=1.0, max_seq_length=64, max_steps=-1, model_name_or_path='../../model/original_pretrained_model/bert-large-uncased', model_type='bert', n_gpu=1, no_cuda=False, num_train_epochs=4.0, output_dir='../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/', output_mode='classification', overwrite_cache=False, overwrite_output_dir=True, per_gpu_eval_batch_size=8, per_gpu_train_batch_size=32, save_steps=1000000, seed=42, server_ip='', server_port='', task_name='sst-2', tokenizer_name='', warmup_steps=0, weight_decay=0.0)
+06/11/2022 11:51:15 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_train_bert-large-uncased_64_sst-2
+06/11/2022 11:51:18 - INFO - __main__ -   ***** Running training *****
+06/11/2022 11:51:18 - INFO - __main__ -     Num examples = 67349
+06/11/2022 11:51:18 - INFO - __main__ -     Num Epochs = 4
+06/11/2022 11:51:18 - INFO - __main__ -     Instantaneous batch size per GPU = 32
+06/11/2022 11:51:18 - INFO - __main__ -     Total train batch size (w. parallel, distributed & accumulation) = 32
+06/11/2022 11:51:18 - INFO - __main__ -     Gradient Accumulation steps = 1
+06/11/2022 11:51:18 - INFO - __main__ -     Total optimization steps = 8420
+06/11/2022 11:51:18 - INFO - __main__ -     Continuing training from checkpoint, will skip to saved global_step
+06/11/2022 11:51:18 - INFO - __main__ -     Continuing training from epoch 0
+06/11/2022 11:51:18 - INFO - __main__ -     Continuing training from global step 0
+06/11/2022 11:51:18 - INFO - __main__ -     Will skip the first 0 steps in the first epoch
+06/11/2022 11:51:18 - INFO - __main__ -   epoch 0/4
+/root/autodl-tmp/tiny_bert/BERT-EMD/bert_fineturn/optimization.py:155: UserWarning: This overload of add_ is deprecated:
+	add_(Number alpha, Tensor other)
+Consider using one of the following signatures instead:
+	add_(Tensor other, *, Number alpha) (Triggered internally at  /opt/conda/conda-bld/pytorch_1639180594101/work/torch/csrc/utils/python_arg_parser.cpp:1050.)
+  exp_avg.mul_(beta1).add_(1.0 - beta1, grad)
+06/11/2022 11:52:57 - INFO - __main__ -   Creating features from dataset file at ../../data/glue_data/SST-2/
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   Writing example 0/872
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   guid: dev-1
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 2009 1005 1055 1037 11951 1998 2411 12473 4990 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   label: 1 (id = 1)
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   guid: dev-2
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 4895 10258 2378 8450 2135 21657 1998 7143 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   label: 0 (id = 0)
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   guid: dev-3
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 4473 2149 2000 3246 2008 13401 2003 22303 2000 28866 1037 2350 2476 2004 1037 3293 2664 1999 15338 3512 12127 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   label: 1 (id = 1)
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   guid: dev-4
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 1996 3772 1010 12703 1010 2189 1010 16434 1998 2614 2024 2035 2004 24826 15683 2445 1996 2537 1005 1055 17151 3334 2063 2334 2229 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   label: 1 (id = 1)
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   *** Example ***
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   guid: dev-5
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   input_ids: 101 2009 1005 1055 4030 1011 1011 2200 1010 2200 4030 1012 102 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   attention_mask: 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   token_type_ids: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+06/11/2022 11:52:57 - INFO - bert_fineturn.data_processor.glue -   label: 0 (id = 0)
+06/11/2022 11:52:58 - INFO - __main__ -   Saving features into cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 11:52:58 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 11:52:58 - INFO - __main__ -     Num examples = 872
+06/11/2022 11:52:58 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 65.05it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 65.08it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 64.31it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 63.98it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 64.44it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 64.69it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 64.58it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 64.08it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 63.70it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 63.29it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 63.12it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 63.07it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 62.95it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 62.66it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 63.11it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 63.57it/s]
+06/11/2022 11:52:59 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 11:52:59 - INFO - __main__ -     acc = 0.9174311926605505
+/root/miniconda3/envs/TinyBert/lib/python3.7/site-packages/torch/optim/lr_scheduler.py:247: UserWarning: To get the last learning rate computed by the scheduler, please use `get_last_lr()`.
+  warnings.warn("To get the last learning rate computed by the scheduler, "
+{"eval_acc": 0.9174311926605505, "learning_rate": 1.8812351543942996e-05, "loss": 0.28304325580596923, "step": 500}
+06/11/2022 11:54:38 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 11:54:38 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 11:54:38 - INFO - __main__ -     Num examples = 872
+06/11/2022 11:54:38 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 63.70it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 63.76it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 64.06it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 64.27it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 64.52it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 64.49it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 64.80it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 64.88it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 64.86it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 64.13it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 63.78it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 63.98it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 62.82it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 63.45it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 63.62it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 64.06it/s]
+06/11/2022 11:54:40 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 11:54:40 - INFO - __main__ -     acc = 0.9288990825688074
+{"eval_acc": 0.9288990825688074, "learning_rate": 1.762470308788599e-05, "loss": 0.20918866453319787, "step": 1000}
+06/11/2022 11:56:19 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 11:56:19 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 11:56:19 - INFO - __main__ -     Num examples = 872
+06/11/2022 11:56:19 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 65.67it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 64.58it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 64.06it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 64.64it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 65.02it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.09it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 64.51it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 64.80it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 64.37it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 63.37it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 63.07it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 62.59it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 62.02it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 62.84it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 63.42it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 63.70it/s]
+06/11/2022 11:56:21 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 11:56:21 - INFO - __main__ -     acc = 0.9277522935779816
+{"eval_acc": 0.9277522935779816, "learning_rate": 1.643705463182898e-05, "loss": 0.1822994120158255, "step": 1500}
+06/11/2022 11:58:00 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 11:58:00 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 11:58:00 - INFO - __main__ -     Num examples = 872
+06/11/2022 11:58:00 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 63.85it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 64.38it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 64.70it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 64.68it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 63.44it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 62.97it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 63.68it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 64.35it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 64.85it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 65.01it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 64.96it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 65.03it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 65.12it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 65.04it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 64.72it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 64.55it/s]
+06/11/2022 11:58:01 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 11:58:01 - INFO - __main__ -     acc = 0.9323394495412844
+{"eval_acc": 0.9323394495412844, "learning_rate": 1.5249406175771972e-05, "loss": 0.17451500091888011, "step": 2000}
+06/11/2022 11:58:22 - INFO - __main__ -   epoch 1/4
+06/11/2022 11:59:40 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 11:59:40 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 11:59:40 - INFO - __main__ -     Num examples = 872
+06/11/2022 11:59:40 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 65.42it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 65.55it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 65.72it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 65.78it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 65.86it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.89it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 65.74it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 65.34it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 64.81it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 63.90it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 64.05it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 64.30it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 64.52it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 64.70it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 63.90it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 64.70it/s]
+06/11/2022 11:59:42 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 11:59:42 - INFO - __main__ -     acc = 0.9243119266055045
+{"eval_acc": 0.9243119266055045, "learning_rate": 1.4061757719714966e-05, "loss": 0.12217404530011118, "step": 2500}
+06/11/2022 12:01:21 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:01:22 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:01:22 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:01:22 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 64.21it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 64.27it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 64.39it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 64.62it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 64.72it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.18it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 65.39it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 65.54it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 64.78it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 63.73it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 63.58it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 63.47it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 63.99it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 64.42it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 64.77it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 64.58it/s]
+06/11/2022 12:01:23 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:01:23 - INFO - __main__ -     acc = 0.9231651376146789
+{"eval_acc": 0.9231651376146789, "learning_rate": 1.2874109263657959e-05, "loss": 0.11490147332148626, "step": 3000}
+06/11/2022 12:03:02 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:03:02 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:03:02 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:03:02 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 63.35it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 63.76it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 63.82it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 63.76it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 64.43it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 64.54it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 64.07it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 64.43it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 64.84it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 65.03it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 64.89it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 64.70it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 63.95it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 63.92it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 64.20it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 64.39it/s]
+06/11/2022 12:03:04 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:03:04 - INFO - __main__ -     acc = 0.9277522935779816
+{"eval_acc": 0.9277522935779816, "learning_rate": 1.168646080760095e-05, "loss": 0.1124458339707926, "step": 3500}
+06/11/2022 12:04:43 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:04:43 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:04:43 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:04:43 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 65.62it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 65.65it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 65.73it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 65.77it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 65.58it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 64.44it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 64.23it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 64.63it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 64.90it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 64.62it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 64.81it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 64.88it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 65.07it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 64.03it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 64.03it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 64.57it/s]
+06/11/2022 12:04:45 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:04:45 - INFO - __main__ -     acc = 0.9323394495412844
+{"eval_acc": 0.9323394495412844, "learning_rate": 1.0498812351543943e-05, "loss": 0.11465781486267224, "step": 4000}
+06/11/2022 12:05:26 - INFO - __main__ -   epoch 2/4
+06/11/2022 12:06:24 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:06:24 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:06:24 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:06:24 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 63.96it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 64.11it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 64.65it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 65.09it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 64.63it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.03it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 65.04it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 64.62it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 64.48it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 64.27it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 64.03it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 63.68it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 64.11it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 64.52it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 64.79it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 64.61it/s]
+06/11/2022 12:06:25 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:06:25 - INFO - __main__ -     acc = 0.9311926605504587
+{"eval_acc": 0.9311926605504587, "learning_rate": 9.311163895486937e-06, "loss": 0.08646461253985763, "step": 4500}
+06/11/2022 12:08:04 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:08:04 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:08:04 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:08:04 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 63.09it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 63.67it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 64.24it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 64.82it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 65.19it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.54it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 65.50it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 65.17it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 65.27it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 65.42it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 65.42it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 65.47it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 65.54it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 65.51it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 65.53it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 65.41it/s]
+06/11/2022 12:08:06 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:08:06 - INFO - __main__ -     acc = 0.9334862385321101
+{"eval_acc": 0.9334862385321101, "learning_rate": 8.12351543942993e-06, "loss": 0.07170783091278281, "step": 5000}
+06/11/2022 12:09:45 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:09:45 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:09:45 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:09:45 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 65.21it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 64.69it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 64.34it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 64.76it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 65.08it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.31it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 65.48it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 65.56it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 65.65it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 65.51it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 65.24it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 64.05it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 63.75it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 63.76it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 63.54it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 64.50it/s]
+06/11/2022 12:09:46 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:09:46 - INFO - __main__ -     acc = 0.9334862385321101
+{"eval_acc": 0.9334862385321101, "learning_rate": 6.935866983372922e-06, "loss": 0.06898884058592375, "step": 5500}
+06/11/2022 12:11:25 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:11:25 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:11:25 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:11:25 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 65.89it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 66.00it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 65.53it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 65.00it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 65.34it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.61it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 65.74it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 65.94it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 65.89it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 65.63it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 65.54it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 65.35it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 65.04it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 64.48it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 63.89it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 65.02it/s]
+06/11/2022 12:11:27 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:11:27 - INFO - __main__ -     acc = 0.9357798165137615
+{"eval_acc": 0.9357798165137615, "learning_rate": 5.748218527315916e-06, "loss": 0.06704356759507209, "step": 6000}
+06/11/2022 12:12:29 - INFO - __main__ -   epoch 3/4
+06/11/2022 12:13:06 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:13:06 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:13:06 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:13:06 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 65.61it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 65.76it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 65.84it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 65.87it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 65.93it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.99it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 65.96it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 65.80it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 65.40it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 64.25it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 64.19it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 64.53it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 64.76it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 64.42it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 62.81it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 64.64it/s]
+06/11/2022 12:13:08 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:13:08 - INFO - __main__ -     acc = 0.930045871559633
+{"eval_acc": 0.930045871559633, "learning_rate": 4.560570071258908e-06, "loss": 0.06289593254111242, "step": 6500}
+06/11/2022 12:14:46 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:14:46 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:14:46 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:14:46 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 66.26it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 66.32it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 66.31it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 65.93it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 65.14it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.49it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 65.73it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 65.96it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 65.85it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 65.92it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 66.01it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 65.71it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 65.53it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 65.47it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 64.67it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 65.47it/s]
+06/11/2022 12:14:48 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:14:48 - INFO - __main__ -     acc = 0.926605504587156
+{"eval_acc": 0.926605504587156, "learning_rate": 3.3729216152019006e-06, "loss": 0.04253590312943561, "step": 7000}
+06/11/2022 12:16:27 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:16:27 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:16:27 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:16:27 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 63.50it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 64.16it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 64.67it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 65.08it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 65.30it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.54it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 65.63it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 65.73it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 65.21it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 64.39it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 64.53it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 64.78it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 64.90it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 65.01it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 64.91it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 65.01it/s]
+06/11/2022 12:16:29 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:16:29 - INFO - __main__ -     acc = 0.930045871559633
+{"eval_acc": 0.930045871559633, "learning_rate": 2.1852731591448932e-06, "loss": 0.04533277827303391, "step": 7500}
+06/11/2022 12:18:07 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:18:07 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:18:07 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:18:07 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 66.52it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 66.52it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 66.39it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 66.37it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 65.83it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.29it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 65.57it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 65.78it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 65.90it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 65.96it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 66.02it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 66.05it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 66.08it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 66.14it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 65.97it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 65.88it/s]
+06/11/2022 12:18:09 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:18:09 - INFO - __main__ -     acc = 0.9277522935779816
+{"eval_acc": 0.9277522935779816, "learning_rate": 9.976247030878861e-07, "loss": 0.03980960446200334, "step": 8000}
+06/11/2022 12:19:32 - INFO - __main__ -    global_step = 8420, average loss = 0.10876092696611146
+06/11/2022 12:19:32 - INFO - __main__ -   Saving model checkpoint to ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/
+06/11/2022 12:19:32 - INFO - bert_fineturn.configuration_utils -   Configuration saved in ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/config.json
+06/11/2022 12:19:33 - INFO - bert_fineturn.modeling_utils -   Model weights saved in ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/pytorch_model.bin
+06/11/2022 12:19:33 - INFO - bert_fineturn.configuration_utils -   loading configuration file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/config.json
+06/11/2022 12:19:33 - INFO - bert_fineturn.configuration_utils -   Model config BertConfig {
+  "_num_labels": 2,
+  "architectures": [
+    "BertForSequenceClassification"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": null,
+  "do_sample": false,
+  "early_stopping": false,
+  "eos_token_ids": null,
+  "finetuning_task": "sst-2",
+  "gradient_checkpointing": false,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 1024,
+  "id2label": {
+    "0": "LABEL_0",
+    "1": "LABEL_1"
+  },
+  "initializer_range": 0.02,
+  "intermediate_size": 4096,
+  "is_decoder": false,
+  "is_encoder_decoder": false,
+  "label2id": {
+    "LABEL_0": 0,
+    "LABEL_1": 1
+  },
+  "layer_norm_eps": 1e-12,
+  "length_penalty": 1.0,
+  "max_length": 20,
+  "max_position_embeddings": 512,
+  "min_length": 0,
+  "model_type": "bert",
+  "no_repeat_ngram_size": 0,
+  "num_attention_heads": 16,
+  "num_beams": 1,
+  "num_hidden_layers": 24,
+  "num_return_sequences": 1,
+  "output_attentions": false,
+  "output_hidden_states": false,
+  "output_past": true,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "pruned_heads": {},
+  "repetition_penalty": 1.0,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0,
+  "torchscript": false,
+  "transformers_version": "4.6.0.dev0",
+  "type_vocab_size": 2,
+  "use_bfloat16": false,
+  "use_cache": true,
+  "vocab_size": 30522
+}
+
+06/11/2022 12:19:33 - INFO - bert_fineturn.modeling_utils -   loading weights file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/pytorch_model.bin
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   Model name '../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/' not found in model shortcut name list (bert-base-uncased, bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, bert-base-multilingual-cased, bert-base-chinese, bert-base-german-cased, bert-large-uncased-whole-word-masking, bert-large-cased-whole-word-masking, bert-large-uncased-whole-word-masking-finetuned-squad, bert-large-cased-whole-word-masking-finetuned-squad, bert-base-cased-finetuned-mrpc, bert-base-german-dbmdz-cased, bert-base-german-dbmdz-uncased, bert-base-finnish-cased-v1, bert-base-finnish-uncased-v1, bert-base-dutch-cased). Assuming '../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/' is a path, a model identifier, or url to a directory containing tokenizer files.
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/added_tokens.json. We won't load it.
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/vocab.txt
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   loading file None
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/special_tokens_map.json
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/tokenizer_config.json
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   Model name '../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/' not found in model shortcut name list (bert-base-uncased, bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, bert-base-multilingual-cased, bert-base-chinese, bert-base-german-cased, bert-large-uncased-whole-word-masking, bert-large-cased-whole-word-masking, bert-large-uncased-whole-word-masking-finetuned-squad, bert-large-cased-whole-word-masking-finetuned-squad, bert-base-cased-finetuned-mrpc, bert-base-german-dbmdz-cased, bert-base-german-dbmdz-uncased, bert-base-finnish-cased-v1, bert-base-finnish-uncased-v1, bert-base-dutch-cased). Assuming '../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/' is a path, a model identifier, or url to a directory containing tokenizer files.
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   Didn't find file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/added_tokens.json. We won't load it.
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/vocab.txt
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   loading file None
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/special_tokens_map.json
+06/11/2022 12:19:39 - INFO - bert_fineturn.tokenization_utils -   loading file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/tokenizer_config.json
+06/11/2022 12:19:39 - INFO - __main__ -   Evaluate the following checkpoints: ['../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/']
+06/11/2022 12:19:39 - INFO - bert_fineturn.configuration_utils -   loading configuration file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/config.json
+06/11/2022 12:19:39 - INFO - bert_fineturn.configuration_utils -   Model config BertConfig {
+  "_num_labels": 2,
+  "architectures": [
+    "BertForSequenceClassification"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": null,
+  "do_sample": false,
+  "early_stopping": false,
+  "eos_token_ids": null,
+  "finetuning_task": "sst-2",
+  "gradient_checkpointing": false,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 1024,
+  "id2label": {
+    "0": "LABEL_0",
+    "1": "LABEL_1"
+  },
+  "initializer_range": 0.02,
+  "intermediate_size": 4096,
+  "is_decoder": false,
+  "is_encoder_decoder": false,
+  "label2id": {
+    "LABEL_0": 0,
+    "LABEL_1": 1
+  },
+  "layer_norm_eps": 1e-12,
+  "length_penalty": 1.0,
+  "max_length": 20,
+  "max_position_embeddings": 512,
+  "min_length": 0,
+  "model_type": "bert",
+  "no_repeat_ngram_size": 0,
+  "num_attention_heads": 16,
+  "num_beams": 1,
+  "num_hidden_layers": 24,
+  "num_return_sequences": 1,
+  "output_attentions": false,
+  "output_hidden_states": false,
+  "output_past": true,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "pruned_heads": {},
+  "repetition_penalty": 1.0,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0,
+  "torchscript": false,
+  "transformers_version": "4.6.0.dev0",
+  "type_vocab_size": 2,
+  "use_bfloat16": false,
+  "use_cache": true,
+  "vocab_size": 30522
+}
+
+06/11/2022 12:19:39 - INFO - bert_fineturn.modeling_utils -   loading weights file ../../model/BERT-EMD/fine-tuned_pretrained_model/SST-2/on_original_data/pytorch_model.bin
+06/11/2022 12:19:45 - INFO - __main__ -   Loading features from cached file ../../data/glue_data/SST-2/cached_dev_bert-large-uncased_64_sst-2
+06/11/2022 12:19:45 - INFO - __main__ -   ***** Running evaluation  *****
+06/11/2022 12:19:45 - INFO - __main__ -     Num examples = 872
+06/11/2022 12:19:45 - INFO - __main__ -     Batch size = 8
+Evaluating:   0%|          | 0/109 [00:00<?, ?it/s]Evaluating:   6%|▋         | 7/109 [00:00<00:01, 61.93it/s]Evaluating:  13%|█▎        | 14/109 [00:00<00:01, 62.90it/s]Evaluating:  19%|█▉        | 21/109 [00:00<00:01, 63.65it/s]Evaluating:  26%|██▌       | 28/109 [00:00<00:01, 64.35it/s]Evaluating:  32%|███▏      | 35/109 [00:00<00:01, 64.81it/s]Evaluating:  39%|███▊      | 42/109 [00:00<00:01, 65.15it/s]Evaluating:  45%|████▍     | 49/109 [00:00<00:00, 65.41it/s]Evaluating:  51%|█████▏    | 56/109 [00:00<00:00, 65.61it/s]Evaluating:  58%|█████▊    | 63/109 [00:00<00:00, 65.80it/s]Evaluating:  64%|██████▍   | 70/109 [00:01<00:00, 65.77it/s]Evaluating:  71%|███████   | 77/109 [00:01<00:00, 65.21it/s]Evaluating:  77%|███████▋  | 84/109 [00:01<00:00, 65.32it/s]Evaluating:  83%|████████▎ | 91/109 [00:01<00:00, 65.47it/s]Evaluating:  90%|████████▉ | 98/109 [00:01<00:00, 65.64it/s]Evaluating:  96%|█████████▋| 105/109 [00:01<00:00, 65.68it/s]Evaluating: 100%|██████████| 109/109 [00:01<00:00, 65.43it/s]
+06/11/2022 12:19:46 - INFO - __main__ -   ***** Eval results  *****
+06/11/2022 12:19:46 - INFO - __main__ -     acc = 0.930045871559633
